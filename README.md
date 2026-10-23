@@ -1,6 +1,6 @@
 # The Scout
 
-A trend scout that has to prove it. Every week The Scout reads X and public behaviour data for your niche, finds what is genuinely new (terms and tools nobody told it about), checks every number against its source, and turns it into a poster-style edition: a PDF brief, a narrated news show, a 9:16 cut for Instagram, and four ready-to-post ideas. It makes dated calls and keeps score in a lead-time ledger, so it can't claim you spotted something early until the ledger proves it.
+A trend scout that has to prove it. Every week The Scout reads X and public behaviour data for your niche, finds what is genuinely new (terms and tools nobody told it about), says what is just trending and what is going out, checks every number against its source, and turns it into a poster-style edition: a PDF brief, a narrated news show, a 9:16 cut for Instagram, and four ready-to-post ideas. It makes dated calls and keeps score in a lead-time ledger, so it can't claim you spotted something early until the ledger proves it.
 
 ## Get started
 
@@ -31,6 +31,7 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 | Hacker News | what builders are discussing | back to 2007 |
 | GitHub stars | adoption of open-source tools | the repo's lifetime |
 | Hugging Face, Apple Music charts, Spotify charts via kworb | snapshots that build their own history from your first run | from your first run |
+| Chartmetric artist history (Spotify listeners and followers, TikTok, YouTube, Instagram) | streaming and social reach, with history | your own Chartmetric API key |
 | YouTube, Spotify artist data | switch on with your own free keys | varies |
 
 ## Commands
@@ -45,6 +46,7 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 | Discovery leads | `python3 scripts/discover.py OUT.json` |
 | X this week, no login | `python3 scripts/xpublic.py pull WATCHLIST.json OUT` then `report OUT --history DIR` |
 | New terms and new AI tools nobody told it about | `python3 scripts/terms.py OUT.json` and `python3 scripts/tools.py OUT.json` |
+| In or out: new, rising, peaking, fading, gone | `python3 scripts/trendstate.py signals BASKET SIGNALS_DIR OUT.json` or `x POSTS.jsonl OUT.json` |
 | News-show video and 9:16 cut | `python3 scripts/show.py SHOW.json OUT` |
 | Calls: propose, check novelty, resolve, score | `python3 scripts/calls.py propose|novelty|resolve|score ...` |
 | Benchmark press search | `python3 scripts/benchmark.py OUTLETS.json QUERY.json OUT.json` |
@@ -60,7 +62,7 @@ A `local.json` beside this file can set default paths for your own machine. Keep
 
 ## What it never does
 
-Post, send, schedule anything without you, sign in to your accounts, accept cookies, get round a paywall or login, or describe something as rising, early or predicted before its ledger proves it. X is read from public posts only; a signed-in pass runs only if you link your own browser.
+Post, send, schedule anything without you, sign in to your accounts, accept cookies, or get round a paywall or login. It calls something rising or fading only with the measured numbers on the page, and never claims it spotted something early or predicted it before its ledger proves it. X is read from public posts only; a signed-in pass runs only if you link your own browser.
 
 ## Limits
 
@@ -69,6 +71,8 @@ Post, send, schedule anything without you, sign in to your accounts, accept cook
 - Screenshots of other sites carry their owners' rights. Credits are printed on every image; check them before posting publicly.
 - The no-login X route uses a free public service (api.fxtwitter.com). If it stops answering, `templates/grok-x-prompt.md` asks Grok instead, and every link is checked before use.
 - Each starter comes with an X watchlist (`starters/*/x-watchlist.json`). Add the people you trust; only add a handle after you've read its profile.
+
+MIT licensed: see `LICENSE`.
 
 ---
 
