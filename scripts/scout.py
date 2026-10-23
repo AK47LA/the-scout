@@ -150,7 +150,7 @@ def run(folder, media=True):
         say("Your edition is ready:")
         for p in made:
             say(f"  {p}")
-        if sys.platform == "darwin":
+        if sys.platform == "darwin" and not os.environ.get("SCOUT_NO_OPEN"):
             subprocess.call(["open", made[0]])
     else:
         say("No edition was made. The messages above say why.")
