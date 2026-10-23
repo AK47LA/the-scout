@@ -274,8 +274,9 @@ def media_box(b, d, w, h):
 def sc_rundown(b, d):
     items = b["items"]
     step = (d * .72) / max(1, len(items))
-    rows = "".join(f'<div style="display:flex;gap:26px;align-items:center;padding:20px 0;border-top:2px solid rgba(233,196,142,.25);{anim("rise", .45, .9 + i * step)}">'
-                   f'<span class="chip" style="font-size:22px;color:{RED};flex:none">{i + 1:02d}</span><span style="font-size:44px;font-weight:700;line-height:1.15">{E(it)}</span></div>'
+    fs, pad = (44, 20) if len(items) <= 5 else (38, 13)  # six or more items: tighter, so the list stays clear of the captions
+    rows = "".join(f'<div style="display:flex;gap:26px;align-items:center;padding:{pad}px 0;border-top:2px solid rgba(233,196,142,.25);{anim("rise", .45, .9 + i * step)}">'
+                   f'<span class="chip" style="font-size:22px;color:{RED};flex:none">{i + 1:02d}</span><span style="font-size:{fs}px;font-weight:700;line-height:1.15">{E(it)}</span></div>'
                    for i, it in enumerate(items))
     return (f'<div style="left:72px;right:72px;top:210px;z-index:3"><div class="mono" style="font-size:24px;color:{RED};font-weight:700;{anim("slidein", .4, .1)}">{E(b.get("kicker", ""))}</div>'
             f'<div class="disp" style="{disp(b.get("size", 150))}margin:18px 0 40px;{anim("slam", .35, .3)}transform-origin:left">{E(b.get("title", ""))}</div>{rows}</div>')

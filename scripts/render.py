@@ -601,7 +601,32 @@ def k_registry(s, c, ctx):
     return head(s, c, ctx, 70) + _tbl(c, cols, rows, t)
 
 
-KIND = {"backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
+def k_signal(s, c, ctx):
+    """One signal per slide: number, what happened, the so-what, and (in the footer) the receipt."""
+    t = ctx.t
+    img = ""
+    if s.get("image_path"):
+        img = (f'<div style="border:8px solid {t["paper"]};box-shadow:{t["card_shadow"]};background:{t["paper"]};height:{s.get("image_h", 330)}px;overflow:hidden;transform:rotate(-1.2deg)">'
+               f'<img src="file://{html.escape(s["image_path"])}" style="width:100%;height:100%;object-fit:cover;object-position:{s.get("image_pos", "center top")};filter:{t.get("image_filter", "none")}"></div>')
+    so = (f'<div style="display:flex;gap:22px;align-items:flex-start;padding-top:24px;border-top:2px solid {c["rule"]}">'
+          f'<span style="flex:none;font-family:{t["mono"]};font-weight:700;font-size:20px;letter-spacing:0.16em;padding:8px 14px;border:3px solid {t["amber"]};color:{t["amber"]};filter:url(#rough)">SO WHAT</span>'
+          f'<span style="font-size:{s.get("so_size", 32)}px;line-height:1.35;font-weight:700">{ctx.txt(s.get("so_what"))}</span></div>')
+    return (f'<div style="display:flex;flex-direction:column;gap:26px">'
+            f'<div style="display:flex;align-items:baseline;gap:22px"><span style="font-family:{t["display"]};{display_style(t, c["dark"], 120)}line-height:0.9">{ctx.txt(s.get("number"))}</span>'
+            f'<span style="font-family:{t["mono"]};font-size:21px;font-weight:600;letter-spacing:0.16em;color:{c["accent"]}">{ctx.txt(s.get("eyebrow"))}</span></div>'
+            f'<h2 style="margin:0;font-family:{t["display"]};font-weight:400;{display_style(t, c["dark"], s.get("headline_size", 74))}line-height:1.06;text-wrap:balance">{ctx.txt(s.get("headline"))}</h2>'
+            f'{img}<p style="margin:0;font-size:{s.get("what_size", 31)}px;line-height:1.4">{ctx.txt(s.get("what"))}</p>{so}</div>')
+
+
+def k_signal_cover(s, c, ctx):
+    t = ctx.t
+    lines = "".join(f'<div style="font-family:{t["display"]};{display_style(t, c["dark"], s.get("size", 120))}line-height:1.0">{ctx.txt(l)}</div>' for l in s.get("lines", []))
+    return (f'<div style="display:flex;flex-direction:column;gap:34px;margin-top:40px">'
+            f'<span style="font-family:{t["mono"]};font-size:22px;font-weight:700;letter-spacing:0.2em;color:{c["accent"]}">{ctx.txt(s.get("eyebrow"))}</span>{lines}'
+            f'<p style="margin:0;font-size:34px;line-height:1.4;max-width:860px">{ctx.txt(s.get("sub"))}</p></div>')
+
+
+KIND = {"signal": k_signal, "signal_cover": k_signal_cover, "backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
         "radar": k_radar, "image_grid": k_image_grid, "metric_chart": k_metric_chart, "groups": k_groups,
         "tests": k_tests, "quote": k_quote}
 

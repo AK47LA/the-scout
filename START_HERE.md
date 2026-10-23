@@ -62,7 +62,7 @@ Each key switches on more. Add one by running its command and pasting the key wh
 security add-generic-password -U -a "$USER" -s scout-elevenlabs -w
 ```
 
-The same command works for `scout-youtube` (YouTube data), `scout-github` (faster GitHub pulls), `scout-spotify-id` and `scout-spotify-secret` (Spotify artist data), and `scout-higgsfield` (cover drawings and an animated intro; the key looks like `KEY_ID:SECRET`). Change the name after `-s`. With an ElevenLabs key you can pick a narrator by adding `"voice": {"voice_id": "..."}` to your edition file.
+The same command works for `scout-youtube` (YouTube data), `scout-github` (faster GitHub pulls), `scout-spotify-id` and `scout-spotify-secret` (Spotify artist data), `scout-higgsfield` (cover drawings, b-roll for the show and an animated intro; the key looks like `KEY_ID:SECRET`), and `scout-chartmetric` (your Chartmetric API refresh token: years of Spotify, TikTok, YouTube and Instagram history per artist). Change the name after `-s`. With an ElevenLabs key you can pick a narrator by adding `"voice": {"voice_id": "..."}` to your edition file.
 
 ## What it never does
 
