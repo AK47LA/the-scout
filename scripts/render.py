@@ -226,9 +226,9 @@ def chip(ctx, label, status):
         col = t["amber"] if status in ("HOLD", "CUT") else (t["ice"] if status in ("ACCEPT", "KEEP") else t["muted_dark"])
         ic = {"ACCEPT": "check", "KEEP": "check", "HOLD": "lens", "CUT": "cross", "CHANGE": "radar", "WATCH": "eye", "FLAG": "radar",
               "CALL": "lens", "PROVE": "check", "OPEN": "lens", "HIT": "check", "MISS": "cross", "VOID": "cross",
-              "WHAT": "eye", "MOVE": "check", "NEXT": "radar"}.get(status, "")
-        if status in ("WATCH", "FLAG", "CALL", "PROVE", "WHAT", "MOVE", "NEXT"):
-            col = t["amber"] if status in ("FLAG", "MOVE") else t["ice"]
+              "WHAT": "eye", "MOVE": "check", "NEXT": "radar", "LEAD": "radar"}.get(status, "")
+        if status in ("WATCH", "FLAG", "CALL", "PROVE", "WHAT", "MOVE", "NEXT", "LEAD"):
+            col = t["amber"] if status in ("FLAG", "MOVE", "LEAD") else t["ice"]
         return (f'<span style="justify-self:start;display:inline-flex;align-items:center;gap:10px;transform:rotate(-2deg);filter:url(#rough);'
                 f'font-family:{t["mono"]};font-size:17px;font-weight:700;letter-spacing:0.14em;padding:9px 13px;border:3px solid {col};'
                 f'border-radius:3px;color:{col};background:{rgba(t["deep"], 0.35)}">{icon(ic, col, 26)}{html.escape(label)}</span>')

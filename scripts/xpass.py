@@ -207,13 +207,14 @@ def ingest(out):
             items.append({"id": "trend-" + re.sub(r"[^a-z0-9]+", "-", t["name"].lower()).strip("-")[:60], "kind": "trend",
                           "url": by_id.get(t.get("page_id"), {}).get("url"), "text": f"{t['name']} {t.get('context') or ''}".strip(),
                           "posts": t.get("posts"), "captured_at": t.get("captured_at") or t.get("observed_at"), "page_id": t.get("page_id")})
-    status = {r.get("page_id"): r.get("status") for r in pages}
-    blocked = [r for r in pages if r.get("status") == "blocked"]
+    status = {r.get("page_id"): r.get("status") for r in pages if r.get("page_id") in by_id}  # last word per planned page
+    attempts = [r for r in pages if r.get("page_id") not in by_id]  # gate or browser refusals from earlier attempts
+    blocked = [pid for pid, st in status.items() if st == "blocked"]
     receipt = {"date": plan_.get("date") or os.path.basename(os.path.abspath(out)), "ingested_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
                "session_started_at": session, "planned_pages": len(plan_["pages"]),
                "pages": {s: sum(1 for v in status.values() if v == s) for s in ("read", "empty", "blocked", "skipped")},
                "posts": sum(1 for i in items if i["id"].startswith("x-")), "trends": sum(1 for i in items if i.get("kind") == "trend"),
-               "dropped": dropped[:50], "unparsed_lines": bad_p + bad_t,
+               "dropped": dropped[:50], "unparsed_lines": bad_p + bad_t, "earlier_attempts": attempts,
                "complete": bool(session) and not blocked and len(status) >= len(plan_["pages"]) > 0,
                "note": "Native signed-in reads. Counts are what the page showed at captured_at, not totals."}
     json.dump({"schema": 1, "source": "xpass.py ingest", "items": items}, open(os.path.join(out, "manifest.json"), "w"), indent=1, ensure_ascii=False)
