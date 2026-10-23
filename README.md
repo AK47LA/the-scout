@@ -12,6 +12,8 @@ Prefer the terminal?
 bash install.sh
 ```
 
+No install? Use **Scout Lite** in Claude: add `lite/SKILL.md` as a skill, turn on web search, and say "Run my Scout for this week." See `lite/README.md`.
+
 Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie games, watching Balatro, Peak and Blue Prince." `SKILL.md` is the playbook your agent follows.
 
 ## What you need
