@@ -501,7 +501,7 @@ def k_signal_board(s, c, ctx):
     """One row per tracked name: 52 weeks of backfilled history, latest week, and whether the rule flagged it."""
     t = ctx.t
     src = s.get("signal_source", "wikipedia")
-    ents = ((ctx.data.get("signals") or {}).get("sources") or {}).get(src, {}).get("entities", {})
+    ents = ((ctx.data.get(s.get("signals_key", "signals")) or {}).get("sources") or {}).get(src, {}).get("entities", {})
     names = s.get("names") or sorted(ents, key=lambda n: -max(ents[n].get("tail52") or [0]))[: s.get("max_rows", 6)]
     rows = ""
     for n in names:

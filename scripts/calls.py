@@ -52,8 +52,14 @@ def validate(rows):
     return probs
 
 
+def bound(p):
+    """A plain slug matches whole slug words only: "jev" must not match "sarajevo"."""
+    import re as _re
+    return f"(^|[/-]){_re.escape(p)}s?($|[/-])" if _re.fullmatch(r"[a-z0-9-]+", p) else p
+
+
 def search(outlets, patterns, since, until, row="novelty"):
-    q = {"row": row, "window_start": since, "window_end": until, "slug_patterns": patterns, "max_candidates": 40}
+    q = {"row": row, "window_start": since, "window_end": until, "slug_patterns": [bound(p) for p in patterns], "max_candidates": 40}
     res = benchmark.run(outlets, q)
     hits = sorted(({"outlet": o["name"], "url": c["url"], "published": (c.get("published") or "")[:10], "title": c.get("title")}
                    for o in res["outlets"] for c in o["candidates"] if c.get("published")), key=lambda h: h["published"])

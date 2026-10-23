@@ -22,10 +22,13 @@ def defaults_from(config_path):
     root = os.path.expanduser(cfg.get("root", os.path.dirname(os.path.abspath(config_path))))
     out = {}
     for k in ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
-              "registry", "backtest"):
+              "registry", "backtest", "x_manifest"):
         if cfg.get(k):
             v = os.path.expanduser(cfg[k].replace("{date}", datetime.date.today().isoformat()))
             out[k] = v if os.path.isabs(v) else os.path.join(root, v)
+    for k in ("terms_bluesky", "tool_lanes"):  # plain settings, not paths
+        if cfg.get(k):
+            out[k] = cfg[k]
     return out
 
 
@@ -139,6 +142,19 @@ def main():
     if a.discover:
         rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "discover.py"), os.path.join(a.out, "discovery.json")])
         summary["steps"]["discovery"] = {"exit": rc, "file": os.path.join(a.out, "discovery.json")}
+        # New words people started using, and new AI tools people picked up: found, not supplied
+        cmd = [sys.executable, "-I", os.path.join(HERE, "terms.py"), os.path.join(a.out, "terms.json")]
+        if d.get("terms_bluesky"):
+            cmd += ["--bluesky", d["terms_bluesky"]]
+        if d.get("x_manifest"):
+            cmd += ["--x-manifest", d["x_manifest"]]
+        rc = subprocess.call(cmd)
+        summary["steps"]["terms"] = {"exit": rc, "file": os.path.join(a.out, "terms.json")}
+        cmd = [sys.executable, "-I", os.path.join(HERE, "tools.py"), os.path.join(a.out, "tools.json")]
+        if d.get("tool_lanes"):
+            cmd += ["--priority", d["tool_lanes"]]
+        rc = subprocess.call(cmd)
+        summary["steps"]["tools"] = {"exit": rc, "file": os.path.join(a.out, "tools.json")}
 
     # 3. Evidence capture
     caps_path = None
