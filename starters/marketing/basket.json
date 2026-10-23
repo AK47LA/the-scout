@@ -1,0 +1,88 @@
+{
+ "watch_id": "marketing",
+ "niche": "Marketing and social media",
+ "start": "2023-01-02",
+ "entities": [
+  {
+   "name": "Instagram",
+   "wikipedia": "Instagram",
+   "bluesky": "instagram"
+  },
+  {
+   "name": "TikTok",
+   "wikipedia": "TikTok",
+   "bluesky": "tiktok"
+  },
+  {
+   "name": "Threads",
+   "wikipedia": "Threads (social network)",
+   "bluesky": "threads app"
+  },
+  {
+   "name": "YouTube Shorts",
+   "wikipedia": "YouTube Shorts",
+   "bluesky": "youtube shorts"
+  },
+  {
+   "name": "LinkedIn",
+   "wikipedia": "LinkedIn",
+   "bluesky": "linkedin"
+  },
+  {
+   "name": "Pinterest",
+   "wikipedia": "Pinterest",
+   "bluesky": "pinterest"
+  },
+  {
+   "name": "Snapchat",
+   "wikipedia": "Snapchat",
+   "bluesky": "snapchat"
+  },
+  {
+   "name": "Influencer marketing",
+   "wikipedia": "Influencer marketing",
+   "bluesky": "influencer marketing"
+  }
+ ],
+ "controls": [
+  {
+   "name": "Coffee",
+   "wikipedia": "Coffee",
+   "bluesky": "coffee"
+  },
+  {
+   "name": "Chess",
+   "wikipedia": "Chess",
+   "bluesky": "chess"
+  },
+  {
+   "name": "Bicycle",
+   "wikipedia": "Bicycle",
+   "bluesky": "bicycle"
+  },
+  {
+   "name": "Python",
+   "hackernews": "python"
+  },
+  {
+   "name": "Linux",
+   "hackernews": "linux"
+  },
+  {
+   "name": "PostgreSQL",
+   "hackernews": "postgres"
+  }
+ ],
+ "rule": {
+  "baseline_weeks": 52,
+  "threshold_mads": 3,
+  "consecutive": 2,
+  "min_volume": {
+   "wikipedia": 500,
+   "hackernews": 3,
+   "bluesky": 50,
+   "github": 100
+  }
+ },
+ "made_at": "2026-10-23"
+}

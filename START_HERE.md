@@ -36,7 +36,7 @@ Want to see it work before choosing your own? Start from one of these:
 python3 scripts/scout.py starter music
 ```
 
-The other starters are `games` (indie games) and `ai-tools`.
+The other starters are `marketing` (social platforms and marketing news), `games` (indie games) and `ai-tools`.
 
 ## The terminal way
 

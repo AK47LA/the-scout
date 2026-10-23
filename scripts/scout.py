@@ -2,7 +2,7 @@
 
   python3 scripts/scout.py setup                      asks your niche, what to watch and your name, then makes the edition
   python3 scripts/scout.py setup --niche "K-pop" --names "NewJeans, ILLIT, KATSEYE" --mark "Sam" --yes
-  python3 scripts/scout.py starter music              start from a ready niche (music, games, ai-tools)
+  python3 scripts/scout.py starter music              start from a ready niche (music, marketing, games, ai-tools)
   python3 scripts/scout.py run [FOLDER]               refresh an edition (the most recent one if no folder)
   python3 scripts/scout.py list                       show your editions
 Editions live in ~/Documents/The Scout/<niche>/ (set SCOUT_HOME to change). Nothing is posted or sent.

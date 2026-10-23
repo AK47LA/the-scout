@@ -1,0 +1,183 @@
+{
+ "niche": "Marketing and social media",
+ "updated": "2026-10-23",
+ "rule": "Add a handle only after reading its profile and matching the name; never guess one.",
+ "why": "X is where platform changes and marketing news break first. xpublic.py reads these accounts' public posts every week without a login.",
+ "accounts": [
+  {
+   "handle": "instagram",
+   "lane": "social-platforms",
+   "name": "Instagram"
+  },
+  {
+   "handle": "Mosseri",
+   "lane": "social-platforms",
+   "name": "Adam"
+  },
+  {
+   "handle": "TikTokComms",
+   "lane": "social-platforms",
+   "name": "TikTokComms"
+  },
+  {
+   "handle": "YouTubeCreators",
+   "lane": "social-platforms",
+   "name": "YouTube Creators"
+  },
+  {
+   "handle": "LinkedIn",
+   "lane": "social-platforms",
+   "name": "LinkedIn"
+  },
+  {
+   "handle": "Meta",
+   "lane": "social-platforms",
+   "name": "Meta"
+  },
+  {
+   "handle": "Snapchat",
+   "lane": "social-platforms",
+   "name": "Snapchat"
+  },
+  {
+   "handle": "pinterest",
+   "lane": "social-platforms",
+   "name": "Pinterest"
+  },
+  {
+   "handle": "socialmedia2day",
+   "lane": "marketing-news",
+   "name": "Social Media Today"
+  },
+  {
+   "handle": "mattnavarra",
+   "lane": "marketing-news",
+   "name": "Matt Navarra"
+  },
+  {
+   "handle": "Adweek",
+   "lane": "marketing-news",
+   "name": "ADWEEK"
+  },
+  {
+   "handle": "adage",
+   "lane": "marketing-news",
+   "name": "Ad Age"
+  },
+  {
+   "handle": "MorningBrew",
+   "lane": "marketing-news",
+   "name": "Morning Brew ☕️"
+  },
+  {
+   "handle": "trendhunter",
+   "lane": "marketing-news",
+   "name": "Trend Hunter"
+  },
+  {
+   "handle": "lindseygamble_",
+   "lane": "marketing-news",
+   "name": "Lindsey Gamble"
+  },
+  {
+   "handle": "buffer",
+   "lane": "marketing-tools",
+   "name": "Buffer"
+  },
+  {
+   "handle": "hootsuite",
+   "lane": "marketing-tools",
+   "name": "Hootsuite 🦉"
+  },
+  {
+   "handle": "sproutsocial",
+   "lane": "marketing-tools",
+   "name": "Sprout Social"
+  },
+  {
+   "handle": "AnthropicAI",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "claudeai",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "OpenAI",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "GoogleDeepMind",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "AIatMeta",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "sama",
+   "lane": "labs",
+   "name": "Sam Altman"
+  },
+  {
+   "handle": "gdb",
+   "lane": "labs",
+   "name": "Greg Brockman"
+  },
+  {
+   "handle": "OfficialLoganK",
+   "lane": "labs",
+   "name": "Logan Kilpatrick"
+  },
+  {
+   "handle": "bcherny",
+   "lane": "labs",
+   "name": "Boris Cherny"
+  },
+  {
+   "handle": "bilawalsidhu",
+   "lane": "creative-ai",
+   "name": "Bilawal Sidhu"
+  },
+  {
+   "handle": "higgsfield_ai",
+   "lane": "creative-ai",
+   "name": "Higgsfield AI 🧩"
+  },
+  {
+   "handle": "krea_ai",
+   "lane": "creative-ai",
+   "name": "Krea"
+  },
+  {
+   "handle": "runwayml",
+   "lane": "creative-ai",
+   "name": "Runway"
+  },
+  {
+   "handle": "LumaLabsAI",
+   "lane": "creative-ai",
+   "name": "Luma"
+  },
+  {
+   "handle": "suno",
+   "lane": "creative-ai",
+   "name": "Suno"
+  },
+  {
+   "handle": "udiomusic",
+   "lane": "creative-ai",
+   "name": "udio"
+  },
+  {
+   "handle": "elevenlabs",
+   "lane": "creative-ai",
+   "name": "ElevenLabs"
+  }
+ ]
+}

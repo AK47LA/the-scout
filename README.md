@@ -41,7 +41,7 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 | Step | Command |
 |---|---|
 | Guided first edition | `python3 scripts/scout.py setup` |
-| Ready-made starter (music, games, ai-tools) | `python3 scripts/scout.py starter music` |
+| Ready-made starter (music, marketing, games, ai-tools) | `python3 scripts/scout.py starter music` |
 | Refresh your latest edition | `python3 scripts/scout.py run` |
 | Whole check, every option | `python3 scripts/run.py --out OUT [--run-dir JOURNAL] [--signals S.json --pull] [--calls C.jsonl --outlets O.json] [--slides SLIDES] [--media] [--discover]` |
 | Signals | `python3 scripts/signals.py check|pull|analyze BASKET OUT` |
