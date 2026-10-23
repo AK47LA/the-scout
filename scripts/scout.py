@@ -122,7 +122,7 @@ def build_edition(niche, mark, basket):
     ed["mark"] = (mark or "").upper()[:24]
     ed["date"] = datetime.date.today().strftime("%d %b %Y").upper()
     cover = ed["slides"][0]
-    cover["headline"] = f"{niche}, with its history."
+    cover["headline"] = f"{niche}, with history."
     cover["voiceover"] = f"This is The Scout for {niche}: behaviour data with history, flagged by one fixed rule."
     cover["source"] = "Made with The Scout"
     has = {src for e in basket["entities"] for src in e}
