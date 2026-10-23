@@ -15,6 +15,8 @@ Everything runs through `scripts/`, Python standard library plus Chrome or Chrom
 4. **Learn who moves first.** After a backtest or a resolved hit, `python3 scripts/registry.py BACKTEST_DIR REGISTRY.json` credits the accounts that posted before the press. Feed the top Bluesky and Hacker News movers into the signals basket, and X accounts into the Scout profile through its gated browser work.
 5. **Hand over.** Say what was captured, what failed, what the gate allows and what's due next. Never post, send or schedule anything new.
 
+4. **X pass, in the account window.** X is where new terms show up first, and it needs a signed-in browser. `xpass.py plan x/DATE` builds the read list (trending and news tabs, Latest searches for the watch terms, open calls, found terms and tools, and registry early movers whose own profile links an X account). `xpass.py reserve x/DATE` asks the site gate (`x_gate` in local.json) before any signed-in page; denied means stop. Read each page with an already signed-in browser, read only, appending to `posts.jsonl`, `trends.jsonl` and `pages.jsonl`, then `xpass.py ingest x/DATE`. `terms.py --x-dir x` compares the newest pass with the earlier ones. Never sign in, like, follow, reply, repost, bookmark or DM.
+
 ## Rules the code enforces
 
 - Numbers enter copy only as placeholders (`{{records}}`, `{{false_label_per_watch|one_in}}`, `{{earliest_comparison|date}}`, `{{radar_gate.reason}}`). A bare digit fails unless the slide lists it in `untraced_ok` with a reason.
@@ -34,6 +36,7 @@ Everything runs through `scripts/`, Python standard library plus Chrome or Chrom
 | Discovery leads | `discover.py` |
 | New terms nobody supplied: phrases that jumped against their own past (Hacker News, Bluesky seeds, saved X text) | `terms.py` |
 | New AI tools to try: Show HN, new GitHub repos, trending Hugging Face, ranked by traction and lane | `tools.py` |
+| X pass: read list, site gate, saved post text for `terms.py --x-dir` | `xpass.py plan|reserve|ingest|status` |
 | Calls: propose, novelty, resolve, score | `calls.py` |
 | Lead-time ledger and gate | `ledger.py` |
 | Early-mover registry | `registry.py` |
@@ -46,6 +49,6 @@ Everything runs through `scripts/`, Python standard library plus Chrome or Chrom
 
 ## Writing the edition
 
-The edition has to find things the reader didn't tell it. Every week, open the top of `terms.json` and `tools.json`, trace each lead to its first post, pull its history (`signals.py`), run `calls.py novelty` on it, and put what survives in a "Found by the Scout" section and a "Try this week" section. Open each tool before recommending it and say which ones were tried. Plain slugs match whole slug words only; a name that is also an ordinary word or another company (Gutsy, Jev in Sarajevo) needs its match read before it counts.
+Newest first. Headline slots go to things first seen in the last 30 days, each with its first-seen date; anything older is labelled established (or OLD NEWS on a slide) and kept out of the lead. The edition has to find things the reader didn't tell it. Every week, open the top of `terms.json` and `tools.json`, trace each lead to its first post, pull its history (`signals.py`), run `calls.py novelty` on it, and put what survives in a "Found by the Scout" section and a "Try this week" section. Open each tool before recommending it and say which ones were tried. Plain slugs match whole slug words only; a name that is also an ordinary word or another company (Gutsy, Jev in Sarajevo) needs its match read before it counts.
 
 Lead with what changed since last week. Grade with ACCEPT and HOLD. A flag is attention, not adoption; say so. A zero channel means nothing collected, not nothing happening. Missing coverage is never decline. Separate facts from interpretation, and end with what's due next: the next call date, the next comparison window, the watch that's closest to a flag.

@@ -178,6 +178,34 @@ def main():
     ch = audit.compare(prev, cur)
     check("history compare reports a change", ch == [{"figure": "accepted", "before": 4, "after": 5}], ch)
 
+    import terms, xpass  # noqa: E402
+    xd = os.path.join(tmp, "x")
+    for day, texts in (("2026-10-16", ["agent loops all week", "nothing new"]), ("2026-10-23", ["decision model shipped", "decision model again", "decision model three"])):
+        out = os.path.join(xd, day)
+        os.makedirs(out)
+        json.dump({"date": day, "pages": [{"id": "q-a", "kind": "search", "query": "a", "url": "https://x.com/search?q=a"}]},
+                  open(os.path.join(out, "plan.json"), "w"))
+        with open(os.path.join(out, "reservations.jsonl"), "w") as f:
+            f.write(json.dumps({"allowed": True, "session_started_at": day + "T16:05:00+00:00"}) + "\n")
+        with open(os.path.join(out, "posts.jsonl"), "w") as f:
+            for i, t in enumerate(texts):
+                f.write(json.dumps({"page_id": "q-a", "url": f"https://x.com/u{i}/status/{100 + i}", "author": f"@u{i}", "text": t}) + "\n")
+            f.write(json.dumps({"page_id": "q-a", "url": "https://x.com/u0/status/100", "text": "duplicate"}) + "\n")
+            f.write(json.dumps({"page_id": "q-a", "url": "https://example.com/not-x", "text": "x"}) + "\n")
+        with open(os.path.join(out, "pages.jsonl"), "w") as f:
+            f.write(json.dumps({"page_id": "q-a", "status": "read"}) + "\n")
+        rc = xpass.ingest(out)
+    check("xpass ingest keeps X posts, drops duplicates and non-X URLs", rc["posts"] == 3 and len(rc["dropped"]) == 1 and rc["complete"], rc)
+    man = json.load(open(os.path.join(xd, "2026-10-23", "manifest.json")))
+    check("xpass manifest carries native provenance", man["items"][0]["provenance"]["session_started_at"].startswith("2026-10-23"))
+    latest, rec, base = terms.x_passes(xd)
+    check("terms reads the newest X pass against earlier ones", latest == "2026-10-23" and len(rec) == 3 and len(base) == 2)
+    hit = [t for t in terms.surface(rec, base, min_docs=3) if t["term"] == "decision model"]
+    check("terms surfaces a phrase new on X", bool(hit) and hit[0]["new"])
+    denied = xpass.reserve(os.path.join(tmp, "gate"), {"x_gate": {"cwd": tmp, "cmd": [sys.executable, "-c",
+                           "print('{\"allowed\": false, \"reason\": \"Outside window\"}')"]}})
+    check("xpass reserve honours a denied gate", denied["allowed"] is False and denied["reason"] == "Outside window", denied)
+
     print(f"\n{'all checks passed' if not FAILS else str(len(FAILS)) + ' check(s) failed'}")
     sys.exit(1 if FAILS else 0)
 

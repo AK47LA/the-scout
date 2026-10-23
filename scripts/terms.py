@@ -1,10 +1,11 @@
 """New-term finder: words and phrases people suddenly started using, before anyone names them as a trend.
 
-Usage: python3 terms.py OUT.json [--recent-days 21] [--baseline-days 180] [--bluesky "seed one,seed two"] [--x-manifest PATH]
+Usage: python3 terms.py OUT.json [--recent-days 21] [--baseline-days 180] [--bluesky "seed one,seed two"] [--x-dir DIR] [--x-manifest PATH]
+       [--hn-off]  skip Hacker News (an X-only run)
 Reads public text with dates:
   hackernews   front-page and Show HN titles (Algolia), keyless
   bluesky      latest posts for seed topics, keyless (optional; gentle)
-  x            post text the Scout saved from its gated X pass (manifest entries with a "text" field), optional
+  x            post text the Scout saved from its gated X passes (--x-dir: one dated folder per pass, from xpass.py), optional
 Compares each word and two- or three-word phrase in the recent window with its own baseline. A term surfaces when
 it's new or several times more frequent, with a minimum number of separate posts. Every term carries example posts.
 Terms are leads for the Reviewer, then signals.py history and a press novelty check; they are not trends.
@@ -99,8 +100,20 @@ def x_docs(manifest_path):
     if not manifest_path or not os.path.exists(manifest_path):
         return []
     m = json.load(open(manifest_path))
-    return [{"source": "x", "id": it["id"], "text": it.get("text", ""), "at": (it.get("captured_at") or "")[:10], "url": it.get("url")}
-            for it in m.get("items", []) if it.get("text")]
+    return [{"source": "x", "id": it["id"], "text": it.get("text", ""), "at": (it.get("captured_at") or "")[:10], "url": it.get("url"),
+             "author": it.get("author")} for it in m.get("items", []) if it.get("text")]
+
+
+def x_passes(x_dir):
+    """Every dated X pass (x_dir/YYYY-MM-DD/manifest.json): the newest is recent, the ones before it are the baseline."""
+    if not x_dir or not os.path.isdir(x_dir):
+        return None, [], []
+    days = sorted(d for d in os.listdir(x_dir) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d)
+                  and os.path.exists(os.path.join(x_dir, d, "manifest.json")))
+    if not days:
+        return None, [], []
+    base = [doc for d in days[:-1] for doc in x_docs(os.path.join(x_dir, d, "manifest.json"))]
+    return days[-1], x_docs(os.path.join(x_dir, days[-1], "manifest.json")), base
 
 
 def dedupe(docs, per_author=2):
@@ -158,22 +171,29 @@ def main():
     r0, b0 = now - datetime.timedelta(days=rdays), now - datetime.timedelta(days=rdays + bdays)
     res = {"generated_at": now.isoformat(), "recent": [r0.date().isoformat(), now.date().isoformat()],
            "baseline": [b0.date().isoformat(), r0.date().isoformat()], "sources": {}}
-    hn_recent, hn_base = hn_docs(r0, now), hn_docs(b0, r0)
-    res["sources"]["hackernews"] = {"recent_docs": len(hn_recent), "baseline_docs": len(hn_base),
-                                    "terms": surface(hn_recent, hn_base, min_docs=int(arg("--min-hn", 4)))}
+    if "--hn-off" not in sys.argv:
+        hn_recent, hn_base = hn_docs(r0, now), hn_docs(b0, r0)
+        res["sources"]["hackernews"] = {"recent_docs": len(hn_recent), "baseline_docs": len(hn_base),
+                                        "terms": surface(hn_recent, hn_base, min_docs=int(arg("--min-hn", 4)))}
     seeds = [s.strip() for s in arg("--bluesky", "").split(",") if s.strip()]
     for seed in seeds:
         rec = bluesky_docs(seed, r0, now)
         base = bluesky_docs(seed, b0, r0)
         res["sources"][f"bluesky:{seed}"] = {"recent_docs": len(rec), "baseline_docs": len(base),
                                              "terms": surface(rec, base, min_docs=int(arg("--min-bsky", 6)))}
+    latest, xr, xb = x_passes(arg("--x-dir", None))
+    if xr:
+        note = (f"X pass {latest} against {len(xb)} posts from earlier passes" if xb else
+                f"First X pass ({latest}): no X baseline yet, so these are the most repeated terms, not jumps. A second pass makes them comparable.")
+        res["sources"]["x"] = {"recent_docs": len(xr), "baseline_docs": len(xb), "pass": latest, "note": note,
+                               "terms": surface(xr, xb, min_docs=int(arg("--min-x", 3)))}
     xd = x_docs(arg("--x-manifest", None))
-    if xd:
+    if xd and not xr:
         res["sources"]["x"] = {"docs": len(xd), "note": "X text from saved gated captures; no baseline until a second pass exists",
                                "terms": surface(xd, [], min_docs=2)}
     json.dump(res, open(out, "w"), indent=1)
     for src, s in res["sources"].items():
-        print(f"== {src}: {s.get('recent_docs', s.get('docs'))} recent posts vs {s.get('baseline_docs', 0)} baseline")
+        print(f"== {src}: {s.get('recent_docs', s.get('docs'))} recent posts vs {s.get('baseline_docs', 0)} baseline" + (f"  ({s['note']})" if s.get("note") else ""))
         for t in s["terms"][:25]:
             print(f"   {t['term']:<34} recent {t['recent_docs']:>3}  before {t['baseline_docs']:>4}  {'NEW' if t['new'] else str(t['lift']) + 'x'}")
 

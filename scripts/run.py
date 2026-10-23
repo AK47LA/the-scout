@@ -22,7 +22,7 @@ def defaults_from(config_path):
     root = os.path.expanduser(cfg.get("root", os.path.dirname(os.path.abspath(config_path))))
     out = {}
     for k in ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
-              "registry", "backtest", "x_manifest"):
+              "registry", "backtest", "x_manifest", "x_dir"):
         if cfg.get(k):
             v = os.path.expanduser(cfg[k].replace("{date}", datetime.date.today().isoformat()))
             out[k] = v if os.path.isabs(v) else os.path.join(root, v)
@@ -146,7 +146,9 @@ def main():
         cmd = [sys.executable, "-I", os.path.join(HERE, "terms.py"), os.path.join(a.out, "terms.json")]
         if d.get("terms_bluesky"):
             cmd += ["--bluesky", d["terms_bluesky"]]
-        if d.get("x_manifest"):
+        if d.get("x_dir"):
+            cmd += ["--x-dir", d["x_dir"]]
+        elif d.get("x_manifest"):
             cmd += ["--x-manifest", d["x_manifest"]]
         rc = subprocess.call(cmd)
         summary["steps"]["terms"] = {"exit": rc, "file": os.path.join(a.out, "terms.json")}
