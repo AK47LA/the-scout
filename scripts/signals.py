@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pageviews  # noqa: E402
 
 UA = "TheScout-signals/1.0 (trend research; read-only)"
-BACKFILLED = ["wikipedia", "hackernews", "bluesky", "github", "youtube"]
+BACKFILLED = ["wikipedia", "hackernews", "bluesky", "github", "youtube", "chartmetric"]
 SNAPSHOT = ["huggingface", "apple_music", "kworb_us", "spotify_artist"]
 DEFAULT_MIN = {"wikipedia": 500, "hackernews": 3, "bluesky": 50, "github": 100, "youtube": 20}
 
@@ -156,6 +156,55 @@ def f_youtube(q, start, end):
     return {"weekly": weekly, "note": "YouTube totalResults is an estimate; last 26 weeks only to protect quota."}
 
 
+CM = {"token": None, "at": 0}
+CM_METRICS = {"spotify_listeners": ("spotify", "listeners"), "spotify_followers": ("spotify", "followers"),
+              "spotify_popularity": ("spotify", "popularity"), "tiktok_followers": ("tiktok", "followers"),
+              "youtube_subscribers": ("youtube_channel", "subscribers"), "instagram_followers": ("instagram", "followers")}
+
+
+def cm_get(path, params=None):
+    """Chartmetric with a refresh token from the keychain (scout-chartmetric). Access tokens last about an hour."""
+    if not CM["token"] or time.time() - CM["at"] > 3000:
+        rt = key("chartmetric")
+        if not rt:
+            return None
+        req = urllib.request.Request("https://api.chartmetric.com/api/token", data=json.dumps({"refreshtoken": rt}).encode(),
+                                     headers={"Content-Type": "application/json", "User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            CM.update(token=json.load(r)["token"], at=time.time())
+    d, _ = get_json(f"https://api.chartmetric.com/api/{path}" + ("?" + urllib.parse.urlencode(params) if params else ""),
+                    {"Authorization": f"Bearer {CM['token']}"})
+    time.sleep(1.1)  # stay inside the per-second limit
+    return d
+
+
+def f_chartmetric(q, start, end):
+    """Streaming and social history for an artist. q = "Artist name" or "Chartmetric id", optionally ":metric"
+    (spotify_listeners by default; also spotify_followers, spotify_popularity, tiktok_followers, youtube_subscribers, instagram_followers).
+    Levels, not counts: each week holds the mean of that week's daily values."""
+    if not key("chartmetric"):
+        return {"skipped": "no key: add your Chartmetric API refresh token as scout-chartmetric in the keychain"}
+    name, metric = (q.rsplit(":", 1) if ":" in q and q.rsplit(":", 1)[1] in CM_METRICS else (q, "spotify_listeners"))
+    if name.isdigit():
+        cid = int(name)
+    else:
+        found = ((cm_get("search", {"q": name, "type": "artists", "limit": 1}) or {}).get("obj") or {}).get("artists") or []
+        if not found:
+            return {"skipped": f"Chartmetric has no artist match for {name!r}"}
+        cid = found[0]["id"]
+    source, field = CM_METRICS[metric]
+    d = cm_get(f"artist/{cid}/stat/{source}", {"since": start.isoformat(), "until": end.isoformat(), "field": field}) or {}
+    series = (d.get("obj") or {}).get(field) or []
+    weeks = collections.defaultdict(list)
+    for pt in series:
+        day = datetime.date.fromisoformat(str(pt.get("timestp"))[:10])
+        if pt.get("value") is not None:
+            weeks[(day - datetime.timedelta(days=day.weekday())).isoformat()].append(float(pt["value"]))
+    weekly = {w: round(sum(v) / len(v)) for w, v in sorted(weeks.items())}
+    return {"weekly": weekly, "kind": "level", "chartmetric_id": cid, "metric": metric,
+            "note": f"Chartmetric {source} {field}, weekly mean of daily values"}
+
+
 # ---------- snapshot sources: return {"snapshot": {...}} ----------
 
 def f_huggingface(model, start, end):
@@ -198,14 +247,14 @@ def f_spotify_artist(artist_id, start, end):
 
 FETCH = {"wikipedia": f_wikipedia, "hackernews": f_hackernews, "bluesky": f_bluesky, "github": f_github,
          "youtube": f_youtube, "huggingface": f_huggingface, "apple_music": f_apple_music, "kworb_us": f_kworb_us,
-         "spotify_artist": f_spotify_artist}
+         "spotify_artist": f_spotify_artist, "chartmetric": f_chartmetric}
 
 
 def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:60]
 
 
-LIMITS = {"hackernews": 4, "bluesky": 3, "wikipedia": 2, "github": 1, "youtube": 1}
+LIMITS = {"hackernews": 4, "bluesky": 3, "wikipedia": 2, "github": 1, "youtube": 1, "chartmetric": 1}
 
 
 def pull(basket, out_dir, refresh=False, workers=8):

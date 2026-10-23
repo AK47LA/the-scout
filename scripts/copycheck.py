@@ -59,12 +59,15 @@ def fmt(value, how):
     raise ValueError(f"unknown format {how}")
 
 
+CJK = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uff00-\uffef]+")
+
+
 def strings(node, path=""):
     if isinstance(node, str):
         yield path, node
     elif isinstance(node, dict):
         for k, v in node.items():
-            if k in ("untraced_ok", "image", "images", "kind", "theme", "id", "from", "to", "series", "status", "tone", "context", "signal_source", "names", "signals_key", "video", "scene", "crop", "focus"):
+            if k in ("untraced_ok", "image", "images", "kind", "theme", "id", "from", "to", "series", "status", "tone", "context", "signal_source", "names", "signals_key", "video", "scene", "crop", "focus", "post"):
                 continue
             yield from strings(v, f"{path}.{k}" if path else k)
     elif isinstance(node, list):
@@ -92,6 +95,8 @@ def check(slides, data, gate_open):
             if isinstance(k, dict) and not k.get("reason"):
                 problems.append(f"slide {i}: untraced_ok {k.get('value')} needs a reason")
         for path, text in strings(s):
+            if CJK.search(text):  # owner rule: English only on screen, no Chinese, Japanese or Korean characters
+                problems.append(f"slide {i} {path}: Chinese, Japanese or Korean characters {CJK.search(text).group(0)!r}. Use English.")
             bare = PLACEHOLDER.sub(" ", text)
             for d in DIGITS.findall(bare):
                 d = d.rstrip(".,")
@@ -101,12 +106,17 @@ def check(slides, data, gate_open):
             problems += [f"slide {i} {path}: {e}" for e in errs]
             # A backtest is a retrospective test, not a live call: allowed only where it says so in the sentence.
             retro = s.get("context") == "backtest" and re.search(r"\bbacktest|\bwould have\b", out, re.I)
+            # A measured state (trendstate.py, numbers on the page) may say rising or fading; it still may not claim to be early.
+            pats = RADAR[2:] if s.get("context") == "states" else RADAR
             if not gate_open and not retro:
-                for pat in RADAR:
+                for pat in pats:
                     m = re.search(pat, out, re.I)
                     if m:
                         problems.append(f"slide {i} {path}: radar claim {m.group(0)!r} while the ledger gate is closed")
             rendered.append((i, path, out))
+        quoted = json.dumps(s.get("post") or {}, ensure_ascii=False)
+        if CJK.search(quoted):
+            problems.append(f"slide {i} post: Chinese, Japanese or Korean characters in a quoted post. Use English.")
     return problems, rendered
 
 

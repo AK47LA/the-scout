@@ -139,8 +139,12 @@ def run(folder, media=True):
     if not (os.path.exists(basket) and os.path.exists(edition)):
         sys.exit(f"{folder} has no basket.json and edition.json; run setup first")
     say("\nPulling public data with history. The first run takes a few minutes; later runs reuse what's saved.")
-    cmd = [sys.executable, "-I", os.path.join(HERE, "run.py"), "--config", os.path.join(folder, "none.json"), "--out", folder,
-           "--signals", basket, "--pull", "--slides", edition]
+    config = os.path.join(folder, "none.json")
+    if os.path.exists(os.path.join(folder, "x-watchlist.json")):  # X every week, no login: the niche's watchlist, read and compared week to week
+        config = os.path.join(folder, "scout-config.json")
+        json.dump({"root": folder, "x_watchlist": "x-watchlist.json", "x_public_dir": "x/{date}", "x_history": "x"}, open(config, "w"), indent=1)
+    cmd = [sys.executable, "-I", os.path.join(HERE, "run.py"), "--config", config, "--out", folder,
+           "--signals", basket, "--pull", "--slides", edition] + (["--discover"] if config.endswith("scout-config.json") else [])
     if media and shutil.which("ffmpeg"):
         cmd.append("--media")
     elif media:
@@ -213,8 +217,9 @@ def main():
         src = os.path.join(ROOT, "starters", a.name)
         folder = os.path.join(HOME, a.name)
         os.makedirs(folder, exist_ok=True)
-        for f in ("basket.json", "edition.json"):
-            shutil.copyfile(os.path.join(src, f), os.path.join(folder, f))
+        for f in ("basket.json", "edition.json", "x-watchlist.json"):
+            if os.path.exists(os.path.join(src, f)):
+                shutil.copyfile(os.path.join(src, f), os.path.join(folder, f))
         if a.mark:
             ed = json.load(open(os.path.join(folder, "edition.json")))
             ed["mark"] = a.mark.upper()[:24]

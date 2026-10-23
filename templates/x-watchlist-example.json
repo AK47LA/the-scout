@@ -1,0 +1,11 @@
+{
+ "niche": "your niche",
+ "rule": "Add a handle only after reading its profile and matching the name; never guess one.",
+ "accounts": [
+  {
+   "handle": "example_handle",
+   "lane": "news",
+   "name": "Replace me"
+  }
+ ]
+}

@@ -1,0 +1,258 @@
+{
+ "niche": "AI tools",
+ "updated": "2026-10-23",
+ "rule": "Add a handle only after reading its profile and matching the name; never guess one.",
+ "why": "X is where news in this niche breaks first. xpublic.py reads these accounts' public posts every week without a login.",
+ "accounts": [
+  {
+   "handle": "AnthropicAI",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "claudeai",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "OpenAI",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "GoogleDeepMind",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "AIatMeta",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "sama",
+   "lane": "labs",
+   "name": "Sam Altman"
+  },
+  {
+   "handle": "gdb",
+   "lane": "labs",
+   "name": "Greg Brockman"
+  },
+  {
+   "handle": "OfficialLoganK",
+   "lane": "labs",
+   "name": "Logan Kilpatrick"
+  },
+  {
+   "handle": "bcherny",
+   "lane": "labs",
+   "name": "Boris Cherny"
+  },
+  {
+   "handle": "karpathy",
+   "lane": "builders",
+   "name": "Andrej Karpathy"
+  },
+  {
+   "handle": "swyx",
+   "lane": "builders",
+   "name": "swyx"
+  },
+  {
+   "handle": "simonw",
+   "lane": "builders",
+   "name": "Simon Willison"
+  },
+  {
+   "handle": "steipete",
+   "lane": "builders",
+   "name": "Peter Steinberger 🦞"
+  },
+  {
+   "handle": "levelsio",
+   "lane": "builders",
+   "name": "@levelsio"
+  },
+  {
+   "handle": "mckaywrigley",
+   "lane": "builders",
+   "name": "Mckay Wrigley"
+  },
+  {
+   "handle": "theo",
+   "lane": "builders",
+   "name": "Theo - t3.gg"
+  },
+  {
+   "handle": "rauchg",
+   "lane": "builders",
+   "name": "Guillermo Rauch"
+  },
+  {
+   "handle": "amasad",
+   "lane": "builders",
+   "name": "Amjad Masad"
+  },
+  {
+   "handle": "GeoffreyHuntley",
+   "lane": "builders",
+   "name": "geoff"
+  },
+  {
+   "handle": "Steve_Yegge",
+   "lane": "builders",
+   "name": "Steve Yegge"
+  },
+  {
+   "handle": "mattshumer_",
+   "lane": "builders",
+   "name": "Matt Shumer"
+  },
+  {
+   "handle": "Rasmic",
+   "lane": "builders",
+   "name": null
+  },
+  {
+   "handle": "rowancheung",
+   "lane": "ai-news-and-analysis",
+   "name": "Rowan Cheung"
+  },
+  {
+   "handle": "TheRundownAI",
+   "lane": "ai-news-and-analysis",
+   "name": "The Rundown AI"
+  },
+  {
+   "handle": "AlphaSignalAI",
+   "lane": "ai-news-and-analysis",
+   "name": "AlphaSignal"
+  },
+  {
+   "handle": "_akhaliq",
+   "lane": "ai-news-and-analysis",
+   "name": "AK"
+  },
+  {
+   "handle": "omarsar0",
+   "lane": "ai-news-and-analysis",
+   "name": "elvis"
+  },
+  {
+   "handle": "emollick",
+   "lane": "ai-news-and-analysis",
+   "name": "Ethan Mollick"
+  },
+  {
+   "handle": "deedydas",
+   "lane": "ai-news-and-analysis",
+   "name": "Deedy"
+  },
+  {
+   "handle": "kimmonismus",
+   "lane": "ai-news-and-analysis",
+   "name": "Chubby♨️"
+  },
+  {
+   "handle": "petergyang",
+   "lane": "ai-news-and-analysis",
+   "name": "Peter Yang"
+  },
+  {
+   "handle": "LinusEkenstam",
+   "lane": "ai-news-and-analysis",
+   "name": "Linus ✦ Ekenstam"
+  },
+  {
+   "handle": "MatthewBerman",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "coreyganim",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "minchoi",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "milesdeutscher",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "AravSrinivas",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "levie",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "alliekmiller",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "thursdai_pod",
+   "lane": "ai-news-and-analysis",
+   "name": null
+  },
+  {
+   "handle": "venturetwins",
+   "lane": "ai-news-and-analysis",
+   "name": "Justine Moore"
+  },
+  {
+   "handle": "omooretweets",
+   "lane": "ai-news-and-analysis",
+   "name": "Olivia Moore"
+  },
+  {
+   "handle": "bilawalsidhu",
+   "lane": "creative-ai",
+   "name": "Bilawal Sidhu"
+  },
+  {
+   "handle": "higgsfield_ai",
+   "lane": "creative-ai",
+   "name": "Higgsfield AI 🧩"
+  },
+  {
+   "handle": "krea_ai",
+   "lane": "creative-ai",
+   "name": "Krea"
+  },
+  {
+   "handle": "runwayml",
+   "lane": "creative-ai",
+   "name": "Runway"
+  },
+  {
+   "handle": "LumaLabsAI",
+   "lane": "creative-ai",
+   "name": "Luma"
+  },
+  {
+   "handle": "suno",
+   "lane": "creative-ai",
+   "name": "Suno"
+  },
+  {
+   "handle": "udiomusic",
+   "lane": "creative-ai",
+   "name": "udio"
+  },
+  {
+   "handle": "elevenlabs",
+   "lane": "creative-ai",
+   "name": "ElevenLabs"
+  }
+ ]
+}

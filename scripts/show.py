@@ -1,6 +1,6 @@
 """The Scout as a short news show: narrated beats with motion, real evidence on screen, labelled illustration.
 
-Usage: python3 show.py SHOW.json OUT_DIR
+Usage: python3 show.py SHOW.json OUT_DIR [--reuse]
 SHOW.json: {"desk", "date", "segment", "voice": {voice_id, model_id}, "music": {"prompt", "volume"} | null,
             "ticker": ["HEADLINE", ...], "beats": [{"id", "scene", "vo", "pad", "min", "untraced_ok", ...scene props}]}
 Scenes: sting, clip, evidence, decide, bars, timeline, card. Each beat lasts as long as its line plus a pad.
@@ -15,6 +15,7 @@ sys.path.insert(0, HERE)
 import cdp, copycheck, media, render, signals  # noqa: E402
 
 W, H, FPS = 1080, 1350, 30
+PAGE = {"w": W, "h": H, "top": 0}  # the output canvas; a taller page (9:16 for Reels) centres the 4:5 frame in it
 T = render.KAIJU
 INK, PAPER, CREAM, RED, TEAL = T["navy"], T["paper"], T["ice"], T["amber"], T["deep"]
 E = html.escape
@@ -100,7 +101,7 @@ def shell(show, b, inner, start, total, first):
     ticker = "   ·   ".join(E(x) for x in show.get("ticker", []))
     ticker = f"{ticker}   ·   {ticker}   ·   "
     head = (f'<div style="left:60px;right:60px;top:44px;display:flex;justify-content:space-between;align-items:center;z-index:5">'
-            f'<div style="display:flex;align-items:center;gap:16px"><span style="font-weight:700;font-size:28px;letter-spacing:.16em">THE SCOUT</span>'
+            f'<div style="display:flex;align-items:center;gap:16px"><span style="font-weight:700;font-size:28px;letter-spacing:.16em">{E(show.get("brand", "THE SCOUT"))}</span>'
             f'<span class="chip" style="font-size:15px;color:{RED}"><span style="{anim("blink", 1.0, 0, "linear", "infinite")}">●</span> {E(show.get("desk", "NEWS DESK"))}</span></div>'
             f'<div style="display:flex;align-items:center;gap:16px"><span class="mono" style="font-size:17px;color:{T["muted_dark"]}">{E(show.get("date", ""))}</span>'
             f'<span class="chip" style="font-size:15px;color:{CREAM}">{E(b.get("segment", show.get("segment", "")))}</span></div></div>')
@@ -116,8 +117,14 @@ def shell(show, b, inner, start, total, first):
                 f'<span class="cap" data-caps="{E(json.dumps(b["_caps"]))}" style="background:{INK};color:{CREAM};font-size:38px;font-weight:700;line-height:1.25;'
                 f'padding:12px 22px;text-align:center;max-width:900px;box-shadow:6px 6px 0 {RED}"></span></div>')
     wipe = "" if first else (f'<div style="inset:0;z-index:9;background:{RED};border-right:14px solid {INK};{anim("wipe", .34, 0, "cubic-bezier(.7,0,.3,1)")}"></div>')
+    frame = f'<div id="f">{render.texture(T)}{head}{inner}{src}{caps}{tick}{wipe}</div>'
+    if PAGE["h"] > H:  # poster margins above and below; captions stay clear of the app's bottom overlay
+        frame = (f'<div style="position:relative;width:{PAGE["w"]}px;height:{PAGE["h"]}px;overflow:hidden;background:{TEAL}">{render.texture(T)}'
+                 f'<div style="position:absolute;left:0;right:0;top:{PAGE["top"] - 18}px;height:6px;background:{RED};z-index:2"></div>'
+                 f'<div style="position:absolute;left:0;top:{PAGE["top"]}px;z-index:1">{frame}</div>'
+                 f'<div style="position:absolute;left:0;right:0;top:{PAGE["top"] + H + 12}px;height:6px;background:{RED};z-index:2"></div></div>')
     return (f'<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="{T["fonts_url"]}"><style>{BASE_CSS}</style></head><body>'
-            f'{render.HANDMADE_DEFS}<div id="f">{render.texture(T)}{head}{inner}{src}{caps}{tick}{wipe}</div>{SEEK_JS}</body></html>')
+            f'{render.HANDMADE_DEFS}{frame}{SEEK_JS}</body></html>')
 
 
 # Scenes. Each returns the inner HTML for a beat of length d seconds.
@@ -203,10 +210,12 @@ def sc_bars(b, d):
     for i, r in enumerate(b["rows"]):
         at = .5 + i * .7
         w = 820 * r["value"] / vmax
-        rows += (f'<div style="margin-top:{60 if i else 0}px"><div class="mono" style="font-size:24px;color:{T["muted_dark"]};margin-bottom:14px;{anim("fade", .3, at)}">{E(r["label"])}</div>'
-                 f'<div style="display:flex;align-items:center;gap:26px"><div style="width:{w:.0f}px;height:120px;background:{RED if r.get("hot") else CREAM};box-shadow:8px 8px 0 {INK};'
+        bh, gap, ns = b.get("bar_h", 120), b.get("row_gap", 60), b.get("num_size", 110)
+        w = (b.get("bar_w", 820)) * r["value"] / vmax
+        rows += (f'<div style="margin-top:{gap if i else 0}px"><div class="mono" style="font-size:22px;color:{T["muted_dark"]};margin-bottom:12px;{anim("fade", .3, at)}">{E(r["label"])}</div>'
+                 f'<div style="display:flex;align-items:center;gap:26px"><div style="width:{w:.0f}px;height:{bh}px;background:{RED if r.get("hot") else CREAM};box-shadow:8px 8px 0 {INK};'
                  f'transform-origin:left;{anim("grow", 1.0, at, "cubic-bezier(.2,.9,.1,1)")}"></div>'
-                 f'<div class="disp" style="{disp(110)}{anim("fade", .2, at)}" data-to="{r["value"]}" data-at="{at}" data-len="1.0">0</div></div></div>')
+                 f'<div class="disp" style="{disp(ns)}{anim("fade", .2, at)}" data-to="{r["value"]}" data-at="{at}" data-len="1.0">0</div></div></div>')
     return (f'<div style="left:72px;right:72px;top:240px;z-index:3"><div class="mono" style="font-size:24px;color:{RED};font-weight:700;{anim("slidein", .4, .1)}">{E(b.get("kicker", ""))}</div>'
             f'<div class="disp" style="{disp(84)}margin:20px 0 70px;{anim("rise", .5, .2)}">{E(b.get("headline", ""))}</div>{rows}</div>')
 
@@ -221,7 +230,7 @@ def sc_timeline(b, d):
     for i, e in enumerate(ev):
         at = .3 + run * i / max(1, n - 1)
         col = RED if e.get("kind") == "press" else CREAM
-        tag = {"press": "PRESS", "backtest": "BACKTEST", "launch": "LAUNCH", "call": "CALL"}.get(e.get("kind"), "")
+        tag = e.get("tag") or {"press": "PRESS", "backtest": "BACKTEST", "launch": "LAUNCH", "call": "CALL"}.get(e.get("kind"), "")
         items += (f'<div style="left:72px;top:{y0 + gap * i - 18}px;z-index:3;display:flex;gap:30px;align-items:flex-start;{anim("pop", .35, at)}">'
                   f'<div style="width:44px;height:44px;border-radius:50%;background:{col};border:5px solid {INK};flex:none;'
                   f'{"outline:3px dashed " + CREAM + ";outline-offset:6px;" if e.get("kind") == "backtest" else ""}"></div>'
@@ -230,7 +239,8 @@ def sc_timeline(b, d):
                   f'<div style="font-size:36px;font-weight:700;line-height:1.2;margin-top:6px;max-width:820px">{E(e["title"])}</div></div></div>')
     line = (f'<div style="left:{72 + 22 - 3}px;top:{y0}px;width:6px;height:{line_len}px;background:{CREAM};transform-origin:top;z-index:2;'
             f'{anim("growy", run, .3, "linear")}"></div>')
-    stamp = (f'<div style="right:64px;top:{y0 - 40}px;z-index:4;{anim("slam", .32, .3 + run + .35)}">'
+    stamp_top = y0 + line_len + 80 if b.get("stamp_at") == "bottom" else y0 - 40
+    stamp = (f'<div style="right:64px;top:{stamp_top}px;z-index:4;{anim("slam", .32, .3 + run + .35)}">'
              f'<span class="chip" style="font-size:30px;padding:14px 20px;border-width:6px;color:{RED};background:{TEAL}">{E(b.get("stamp", ""))}</span></div>') if b.get("stamp") else ""
     return line + items + stamp
 
@@ -309,6 +319,13 @@ def sc_post(b, d):
     mh = b.get("media_h", 470)
     box = (f'<div style="left:110px;top:300px;z-index:2;transform:rotate(-1.6deg);{anim("drop", .5, .15)}"><div class="card" style="border:10px solid {PAPER}">'
            f'<div style="position:relative;width:860px;height:{mh}px;overflow:hidden;background:#000">{media_box(b, d, 860, mh)}</div></div></div>') if (b.get("image") or b.get("video")) else ""
+    if not box and b.get("post"):  # the post that sets up this idea, quoted with its counts
+        q = b["post"]
+        m = q.get("post_metrics") or {}
+        box = (f'<div style="left:110px;top:300px;width:860px;height:{mh}px;z-index:2;transform:rotate(-1.6deg);{anim("drop", .5, .15)}"><div class="card" style="padding:36px 40px;height:100%;box-sizing:border-box">'
+               f'<div class="mono" style="font-size:20px;color:#5b4a38">{E(q["handle"])} · {E(q["when"])}</div>'
+               f'<div style="font-size:38px;font-weight:600;line-height:1.3;margin-top:20px">{E(q["post_text"])}</div>'
+               f'<div class="mono" style="font-size:22px;margin-top:24px"><b>{fmt_n(m.get("likes"))}</b> LIKES · <b>{fmt_n(m.get("views"))}</b> VIEWS</div></div></div>')
     words = b["hook"].split()
     hook = " ".join(f'<span style="display:inline-block;{anim("pop", .3, .9 + i * .07)}">{E(w)}</span>' for i, w in enumerate(words))
     note = f'<span style="font-size:26px;font-weight:600;margin-left:10px">{E(b["note"])}</span>' if b.get("note") else ""
@@ -321,7 +338,35 @@ def sc_post(b, d):
             f'{note}</div>')
 
 
-SCENES = {"rundown": sc_rundown, "bumper": sc_bumper, "tool": sc_tool, "bignum": sc_bignum, "post": sc_post, "sting": sc_sting, "clip": sc_clip, "evidence": sc_evidence, "decide": sc_decide, "bars": sc_bars, "timeline": sc_timeline, "card": sc_card}
+def fmt_n(v):
+    v = int(v or 0)
+    return f"{v / 1e6:.1f}M" if v >= 1e6 else f"{v / 1e3:.0f}K" if v >= 10_000 else f"{v:,}"
+
+
+def sc_xpost(b, d):
+    """A real post, quoted verbatim with its author, time, counts and link, read through the public API."""
+    p = b["post"]
+    text = p["post_text"]
+    words = text.split()
+    body = " ".join(E(w) for w in words)
+    m = p.get("post_metrics") or {}
+    counts = "".join(f'<span class="mono" style="font-size:22px;color:{INK}"><b style="font-weight:700">{fmt_n(m.get(k))}</b> {lab}</span>'
+                     for k, lab in (("likes", "LIKES"), ("reposts", "REPOSTS"), ("views", "VIEWS")) if m.get(k) is not None)
+    initial = E(p["name"][:1].upper())
+    card = (f'<div style="left:72px;right:72px;top:{b.get("top", 230)}px;z-index:3;{anim("drop", .5, .05)}"><div class="card" style="padding:40px 44px">'
+            f'<div style="display:flex;gap:22px;align-items:center"><div style="width:84px;height:84px;border-radius:50%;background:{TEAL};color:{CREAM};display:flex;'
+            f'align-items:center;justify-content:center;font-family:{T["display"]};font-size:44px;flex:none">{initial}</div>'
+            f'<div><div style="font-size:34px;font-weight:700;line-height:1.1">{E(p["name"])}</div><div class="mono" style="font-size:20px;color:#5b4a38;margin-top:6px">'
+            f'{E(p["handle"])} · {E(p["when"])}</div></div></div>'
+            f'<div style="font-size:{b.get("text_size", 40)}px;font-weight:600;line-height:1.3;margin-top:30px;{anim("fade", .4, .5)}">{body}</div>'
+            f'<div style="display:flex;gap:34px;margin-top:32px;padding-top:22px;border-top:2px solid rgba(22,17,14,.2);{anim("fade", .3, .9)}">{counts}</div></div>'
+            f'<span class="chip" style="position:absolute;right:-10px;top:-26px;font-size:15px;background:{INK};color:{CREAM};border-color:{INK}">{E(b.get("tag", "X POST"))}</span></div>')
+    kick = (f'<div style="left:72px;top:{b.get("top", 230) - 76}px;z-index:4;{anim("slidein", .4, .05)}"><span class="mono" style="background:{RED};color:{INK};'
+            f'font-weight:700;font-size:20px;padding:10px 18px">{E(b.get("kicker", ""))}</span></div>') if b.get("kicker") else ""
+    return kick + card
+
+
+SCENES = {"xpost": sc_xpost, "rundown": sc_rundown, "bumper": sc_bumper, "tool": sc_tool, "bignum": sc_bignum, "post": sc_post, "sting": sc_sting, "clip": sc_clip, "evidence": sc_evidence, "decide": sc_decide, "bars": sc_bars, "timeline": sc_timeline, "card": sc_card}
 
 
 def voice_line(text, voice, key, cache):
@@ -391,16 +436,28 @@ def music_bed(spec, seconds, key, cache):
     """A bed for the whole show: ElevenLabs music if the account has it, else a looped sound-effects bed, else none."""
     if not spec or not key:
         return None, "none"
+    import time
     h = hashlib.sha1(json.dumps([spec, round(seconds)]).encode()).hexdigest()[:12]
-    out = os.path.join(cache, f"music-{h}.mp3")
+    out, loop = os.path.join(cache, f"music-{h}.mp3"), os.path.join(cache, f"loopbed-{h}.mp3")
     if os.path.exists(out):
-        return out, "cached"
+        return out, "elevenlabs music (cached)"
+    why = "music API not tried"
+    for attempt in range(5):  # the music service answers 429 "system busy" under load; wait and retry
+        try:
+            return eleven_audio(out, key, "music", {"prompt": spec["prompt"], "music_length_ms": int(min(300, seconds + 2) * 1000)}), "elevenlabs music"
+        except urllib.error.HTTPError as e:
+            why = f"music API refused ({e.code})"
+            if e.code not in (429, 503):
+                break
+            time.sleep(20 * (attempt + 1))
+    import glob
+    earlier = sorted(glob.glob(os.path.join(cache, "music-*.mp3")), key=lambda f: -media.duration(f))
+    if earlier:  # a real theme from an earlier render beats a short loop
+        return earlier[0], why + "; reused an earlier theme from this edition"
+    if os.path.exists(loop):
+        return loop, why + "; sound-generation loop (cached)"
     try:
-        return eleven_audio(out, key, "music", {"prompt": spec["prompt"], "music_length_ms": int(min(300, seconds + 2) * 1000)}), "elevenlabs music"
-    except urllib.error.HTTPError as e:
-        why = f"music API refused ({e.code})"
-    try:
-        return eleven_audio(out, key, "sound-generation", {"text": spec["prompt"], "duration_seconds": 22, "prompt_influence": 0.35}), why + "; sound-generation loop"
+        return eleven_audio(loop, key, "sound-generation", {"text": spec["prompt"], "duration_seconds": 22, "prompt_influence": 0.35}), why + "; sound-generation loop"
     except urllib.error.HTTPError as e:
         return None, why + f"; sound-generation refused ({e.code})"
 
@@ -415,8 +472,8 @@ def sfx(name, prompt, seconds, key, cache):
         return None
 
 
-def render_beat(chrome, show, b, d, start, total, first, path_html, path_mp4):
-    open(path_html, "w").write(shell(show, b, SCENES[b["scene"]](b, d), start, total, first))
+def render_beat(chrome, html_doc, b, d, path_html, path_mp4):
+    open(path_html, "w").write(html_doc)
     chrome.open(uri(path_html))
     chrome.js("window.__ready")
     enc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
@@ -430,6 +487,7 @@ def render_beat(chrome, show, b, d, start, total, first, path_html, path_mp4):
 
 def main():
     show_path, out = sys.argv[1], os.path.abspath(sys.argv[2])
+    reuse = "--reuse" in sys.argv  # trust beat videos rendered before beat hashes existed
     base = os.path.dirname(os.path.abspath(show_path))
     show = json.load(open(show_path))
     for b in show["beats"]:
@@ -460,12 +518,22 @@ def main():
     total = t
     print(f"{len(timeline)} beats, {total:.1f}s")
 
-    with cdp.Chrome(W, H) as chrome:
+    if show.get("page"):
+        PAGE.update(w=show["page"][0], h=show["page"][1], top=show.get("page_top", (show["page"][1] - H) // 2))
+    with cdp.Chrome(PAGE["w"], PAGE["h"]) as chrome:
         for i, row in enumerate(timeline):
             b = row["beat"]
             p = os.path.join(out, "beats", f"{i:02d}-{b['id']}")
-            render_beat(chrome, show, b, row["dur"], row["start"], total, i == 0, p + ".html", p + ".mp4")
+            doc = shell(show, b, SCENES[b["scene"]](b, row["dur"]), row["start"], total, i == 0)
+            h = hashlib.sha1(f"{doc}|{row['dur']:.3f}|{FPS}".encode()).hexdigest()
             row["video"] = p + ".mp4"
+            have = os.path.exists(p + ".hash") and open(p + ".hash").read() == h
+            if os.path.exists(row["video"]) and (have or (reuse and not os.path.exists(p + ".hash"))):
+                open(p + ".hash", "w").write(h)  # unchanged beat: keep its frames
+                print(f"  {i:02d} {b['id']:<12} {row['dur']:5.2f}s  kept")
+                continue
+            render_beat(chrome, doc, b, row["dur"], p + ".html", row["video"])
+            open(p + ".hash", "w").write(h)
             print(f"  {i:02d} {b['id']:<12} {row['dur']:5.2f}s")
 
     lst = os.path.join(out, "beats", "list.txt")
@@ -488,7 +556,7 @@ def main():
         if r["beat"].get("audio") and r["beat"].get("video"):
             ins += ["-ss", str(r["beat"].get("from", 0)), "-t", f'{r["dur"]:.2f}', "-i", r["beat"]["video"]]
             ms = int(r["start"] * 1000)
-            filt.append(f"[{n}:a]aresample=44100,adelay={ms}|{ms},volume={r['beat'].get('audio_volume', 0.32)},afade=t=out:st={max(0, r['dur'] - .4):.2f}:d=.4[c{n}]")
+            filt.append(f"[{n}:a]aresample=44100,adelay={ms}|{ms},volume={r['beat'].get('audio_volume', 0.32)},afade=t=out:st={max(0, r["dur"] - 0.4):.2f}:d=0.4[c{n}]")
             mix.append(f"[c{n}]")
             n += 1
         if whoosh and r["start"] > 0:
@@ -512,7 +580,7 @@ def main():
         mix.append("[bed]")
         n += 1
     filt.append(f"{''.join(mix)}amix=inputs={len(mix)}:normalize=0:dropout_transition=0,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=44100[a]")
-    final = os.path.join(out, "show.mp4")
+    final = os.path.join(out, f'{show.get("name", "show")}.mp4')
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *ins, "-filter_complex", ";".join(filt), "-map", "0:v", "-map", "[a]",
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", f"{total:.2f}", "-movflags", "+faststart", final], check=True)
     parts, cur = [], None
@@ -526,16 +594,16 @@ def main():
     if len(parts) > 1:
         os.makedirs(os.path.join(out, "parts"), exist_ok=True)
         for i, pt in enumerate(parts):
-            pt["file"] = os.path.join(out, "parts", f"{i + 1:02d}-{pt['name']}.mp4")
+            pt["file"] = os.path.join(out, "parts", f"{show.get('name', 'show')} - {i + 1:02d} {pt['name']}.mp4")
             subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{pt['start']:.3f}", "-t", f"{pt['end'] - pt['start']:.3f}", "-i", final,
                             "-c:v", "libx264", "-crf", "22", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k",
                             "-af", "afade=t=in:d=0.05", "-movflags", "+faststart", pt["file"]], check=True)
-    receipt = {"show": os.path.abspath(show_path), "parts": parts, "seconds": round(total, 2), "fps": FPS, "size": [W, H],
+    receipt = {"show": os.path.abspath(show_path), "parts": parts, "seconds": round(total, 2), "fps": FPS, "size": [PAGE["w"], PAGE["h"]],
                "voice": "elevenlabs" if key else "system preview", "music": bed_how, "sfx": bool(whoosh or thud),
                "beats": [{"id": r["beat"]["id"], "scene": r["beat"]["scene"], "start": r["start"], "dur": r["dur"],
                           "evidence": r["beat"].get("image"), "illustration": r["beat"].get("video")} for r in timeline]}
     json.dump(receipt, open(os.path.join(out, "show-receipt.json"), "w"), indent=1)
-    print(f"show.mp4 {total:.1f}s  music: {bed_how}  -> {final}")
+    print(f"{os.path.basename(final)} {total:.1f}s  music: {bed_how}  -> {final}")
 
 
 if __name__ == "__main__":

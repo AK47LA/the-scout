@@ -1,6 +1,6 @@
 # The Scout
 
-A trend scout that has to prove it. The Scout watches the things you care about (artists, products, tools, shows) using public behaviour data with years of history, flags real changes with one fixed rule, makes dated calls, and keeps score in a lead-time ledger. Every week it turns that into a poster-style edition: a PDF, a spoken brief and a short video. It can't claim you spotted something early until its own ledger proves it.
+A trend scout that has to prove it. Every week The Scout reads X and public behaviour data for your niche, finds what is genuinely new (terms and tools nobody told it about), checks every number against its source, and turns it into a poster-style edition: a PDF brief, a narrated news show, a 9:16 cut for Instagram, and four ready-to-post ideas. It makes dated calls and keeps score in a lead-time ledger, so it can't claim you spotted something early until the ledger proves it.
 
 ## Get started
 
@@ -25,6 +25,7 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 
 | Source | What it shows | History |
 |---|---|---|
+| X, public posts from a watchlist of verified accounts (no login) | where news breaks first: labs, builders, artists, press | builds week on week |
 | Wikipedia pageviews | attention: who people are reading about | back to 2015 |
 | Bluesky search | conversation: who people are posting about | back to 2023 |
 | Hacker News | what builders are discussing | back to 2007 |
@@ -42,6 +43,9 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 | Whole check, every option | `python3 scripts/run.py --out OUT [--run-dir JOURNAL] [--signals S.json --pull] [--calls C.jsonl --outlets O.json] [--slides SLIDES] [--media] [--discover]` |
 | Signals | `python3 scripts/signals.py check|pull|analyze BASKET OUT` |
 | Discovery leads | `python3 scripts/discover.py OUT.json` |
+| X this week, no login | `python3 scripts/xpublic.py pull WATCHLIST.json OUT` then `report OUT --history DIR` |
+| New terms and new AI tools nobody told it about | `python3 scripts/terms.py OUT.json` and `python3 scripts/tools.py OUT.json` |
+| News-show video and 9:16 cut | `python3 scripts/show.py SHOW.json OUT` |
 | Calls: propose, check novelty, resolve, score | `python3 scripts/calls.py propose|novelty|resolve|score ...` |
 | Benchmark press search | `python3 scripts/benchmark.py OUTLETS.json QUERY.json OUT.json` |
 | Lead-time ledger gate | `python3 scripts/ledger.py LEDGER.jsonl` |
@@ -56,13 +60,15 @@ A `local.json` beside this file can set default paths for your own machine. Keep
 
 ## What it never does
 
-Post, send, schedule anything without you, sign in to your accounts, accept cookies, get round a paywall or login, capture social platforms live, or describe something as rising, early or predicted before its ledger proves it.
+Post, send, schedule anything without you, sign in to your accounts, accept cookies, get round a paywall or login, or describe something as rising, early or predicted before its ledger proves it. X is read from public posts only; a signed-in pass runs only if you link your own browser.
 
 ## Limits
 
 - Live screenshots are flaky by nature. A page that hangs is stopped and recorded as a timeout, and its slide shows a labelled gap.
 - A flag means attention moved, not that something is a hit. Bluesky is the earliest and the noisiest source, so treat a Bluesky-only flag as a lead to check.
 - Screenshots of other sites carry their owners' rights. Credits are printed on every image; check them before posting publicly.
+- The no-login X route uses a free public service (api.fxtwitter.com). If it stops answering, `templates/grok-x-prompt.md` asks Grok instead, and every link is checked before use.
+- Each starter comes with an X watchlist (`starters/*/x-watchlist.json`). Add the people you trust; only add a handle after you've read its profile.
 
 ---
 

@@ -22,7 +22,7 @@ def defaults_from(config_path):
     root = os.path.expanduser(cfg.get("root", os.path.dirname(os.path.abspath(config_path))))
     out = {}
     for k in ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
-              "registry", "backtest", "x_manifest", "x_dir"):
+              "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords"):
         if cfg.get(k):
             v = os.path.expanduser(cfg[k].replace("{date}", datetime.date.today().isoformat()))
             out[k] = v if os.path.isabs(v) else os.path.join(root, v)
@@ -142,6 +142,26 @@ def main():
     if a.discover:
         rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "discover.py"), os.path.join(a.out, "discovery.json")])
         summary["steps"]["discovery"] = {"exit": rc, "file": os.path.join(a.out, "discovery.json")}
+        # X, every week, no login: the watchlist's public posts, ranked and compared with earlier weeks
+        if d.get("x_watchlist"):
+            xo = d.get("x_public_dir") or os.path.join(a.out, "x")
+            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "pull", d["x_watchlist"], xo])
+            rc2 = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "report", xo, "--hours", "168"]
+                                  + (["--history", d["x_history"]] if d.get("x_history") else []))
+            summary["steps"]["x_public"] = {"exit": max(rc, rc2), "file": os.path.join(xo, "report.json")}
+            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "x", os.path.join(xo, "posts.jsonl"),
+                                  os.path.join(a.out, "states-x.json")])
+            summary["steps"]["states_x"] = {"exit": rc, "file": os.path.join(a.out, "states-x.json")}
+            if d.get("x_keywords"):  # next week's searches follow what is trending now
+                rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xkeywords.py"), "update", d["x_keywords"],
+                                      "--states", os.path.join(a.out, "states-x.json"), "--terms", os.path.join(a.out, "terms.json"),
+                                      "--posts", os.path.join(xo, "posts.jsonl")])
+                summary["steps"]["x_keywords"] = {"exit": rc, "file": d["x_keywords"]}
+        # In or out: every tracked item's state (new, just trending, rising, peaking, fading, gone) on one rule
+        if a.signals and os.path.isdir(os.path.join(a.out, "signals")):
+            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "signals", a.signals, os.path.join(a.out, "signals"),
+                                  os.path.join(a.out, "states-signals.json")])
+            summary["steps"]["states_signals"] = {"exit": rc, "file": os.path.join(a.out, "states-signals.json")}
         # New words people started using, and new AI tools people picked up: found, not supplied
         cmd = [sys.executable, "-I", os.path.join(HERE, "terms.py"), os.path.join(a.out, "terms.json")]
         if d.get("terms_bluesky"):

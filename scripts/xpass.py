@@ -4,6 +4,7 @@
   python3 xpass.py reserve OUT_DIR        ask the site gate (local.json "x_gate") before any signed-in page; exit 0 only if allowed
   python3 xpass.py ingest OUT_DIR         posts.jsonl + trends.jsonl -> manifest.json for terms.py; writes the pass receipt
   python3 xpass.py status OUT_DIR         exit 0 if this pass already finished
+  python3 xpass.py follows OUT_DIR        add accounts from people.jsonl (the owner's following page) to the watchlist
 The reading itself is done by an agent in a browser that is already signed in, read only: no likes, follows, replies, reposts,
 bookmarks, DMs, compose, and no sign-in. It appends one JSON line per post to posts.jsonl and per trend to trends.jsonl:
   posts.jsonl   {"page_id", "url", "author", "text", "posted_at", "metrics": {"replies", "reposts", "likes", "views"}}
@@ -68,12 +69,49 @@ def x_handle_for(account):
     return None, None
 
 
-def plan(out, calls_p, registry_p, terms_p, tools_p, watch, max_pages):
-    pages = [{"id": "trending", "kind": "trends", "url": "https://x.com/explore/tabs/trending",
+def owner_pages(owner, watchlist_p):
+    """The owner's own signal first: bookmarks, the accounts they follow, and the people they named."""
+    if not owner:
+        return []
+    pages = [{"id": "bookmarks", "kind": "search", "lane": "owner", "url": "https://x.com/i/bookmarks", "keep": "the 20 most recent bookmarks, top to bottom"},
+             {"id": "following", "kind": "people", "lane": "owner", "url": f"https://x.com/{owner}/following",
+              "keep": "every account shown, newest follows first, up to 400: handle, name, bio"}]
+    if watchlist_p and os.path.exists(watchlist_p):
+        for a in json.load(open(watchlist_p))["accounts"]:
+            if a.get("lane") == "owner-named":
+                pages.append({"id": "p-" + a["handle"].lower(), "kind": "profile", "lane": "owner-named", "url": f"https://x.com/{a['handle']}",
+                              "keep": "the 10 newest posts, pinned post excluded"})
+    return pages
+
+
+def merge_follows(out, watchlist_p, owner):
+    """Accounts read on the owner's following page join the watchlist, so the no-login weekly pull covers them too."""
+    people, _ = read_lines(os.path.join(out, "people.jsonl"))
+    wl = json.load(open(watchlist_p))
+    have = {a["handle"].lower() for a in wl["accounts"]}
+    added = []
+    for p in people:
+        h = (p.get("handle") or "").lstrip("@")
+        if not re.fullmatch(r"[A-Za-z0-9_]{1,15}", h) or h.lower() in have or h.lower() == (owner or "").lower():
+            continue
+        have.add(h.lower())
+        added.append({"handle": h, "lane": "owner-follows", "name": p.get("name"), "bio": (p.get("bio") or "")[:160],
+                      "verified": f"listed on @{owner}'s following page, {os.path.basename(os.path.abspath(out))}"})
+    wl["accounts"] += added
+    wl["updated"] = datetime.date.today().isoformat()
+    json.dump(wl, open(watchlist_p, "w"), indent=1, ensure_ascii=False)
+    return {"read": len(people), "added": len(added), "watchlist": len(wl["accounts"])}
+
+
+def plan(out, calls_p, registry_p, terms_p, tools_p, watch, max_pages, owner=None, watchlist_p=None, keywords_p=None):
+    pages = owner_pages(owner, watchlist_p) + [{"id": "trending", "kind": "trends", "url": "https://x.com/explore/tabs/trending",
               "keep": "every trend shown: name, the category line above it, the post count if shown"},
              {"id": "news", "kind": "trends", "url": "https://x.com/explore/tabs/news",
               "keep": "every story shown: headline as the name, the category and time line as context, post count if shown"}]
     searches = [("agents", q) for q in AGENT_TERMS]
+    if keywords_p and os.path.exists(keywords_p):  # the saved keyword list replaces the built-in agent and lane searches
+        kw = json.load(open(keywords_p))
+        searches = [(lane, q) for lane, qs in kw.get("lanes", {}).items() for q in qs] + [("trending now", a["query"]) for a in kw.get("auto", [])]
     calls = [json.loads(l) for l in open(calls_p)] if calls_p and os.path.exists(calls_p) else []
     open_subjects = []
     for c in calls:
@@ -104,7 +142,8 @@ def plan(out, calls_p, registry_p, terms_p, tools_p, watch, max_pages):
             searches.append(("found tools", or_query(names)))
     for w in watch:
         searches.append(("watch", w))
-    searches += list(LANES.items())
+    if not (keywords_p and os.path.exists(keywords_p)):
+        searches += list(LANES.items())
     for lane, q in searches:
         pages.append({"id": "q-" + re.sub(r"[^a-z0-9]+", "-", q.lower()).strip("-")[:48], "kind": "search", "lane": lane, "query": q,
                       "url": search_url(q), "keep": "the first 20 posts in Latest, top to bottom"})
@@ -232,7 +271,9 @@ def main():
         root = os.path.expanduser(cfg.get("root", "."))
         path = lambda k, flag: arg(flag) or (os.path.join(root, cfg[k]) if cfg.get(k) else None)
         res = plan(out, path("calls", "--calls"), path("registry", "--registry"), arg("--terms"), arg("--tools"),
-                   [w.strip() for w in (arg("--watch") or "").split(",") if w.strip()], int(arg("--max-pages", 25)))
+                   [w.strip() for w in (arg("--watch") or "").split(",") if w.strip()], int(arg("--max-pages", 30)),
+                   owner=arg("--owner") or cfg.get("x_owner"), watchlist_p=path("x_watchlist", "--watchlist"),
+                   keywords_p=path("x_keywords", "--keywords"))
         print(f"{len(res['pages'])} pages planned; early movers checked {res['early_movers']['checked']}, confirmed on X {res['early_movers']['confirmed_on_x']}")
         for p in res["pages"]:
             print(f"  {p['kind']:<8} {p.get('lane', ''):<12} {p.get('query') or p['url']}")
@@ -242,6 +283,11 @@ def main():
         sys.exit(0 if res.get("allowed") else 3)
     elif mode == "ingest":
         print(json.dumps(ingest(out), indent=1))
+    elif mode == "follows":
+        cfg = load_config()
+        root = os.path.expanduser(cfg.get("root", "."))
+        wl = arg("--watchlist") or os.path.join(root, cfg["x_watchlist"])
+        print(json.dumps(merge_follows(out, wl, arg("--owner") or cfg.get("x_owner")), indent=1))
     elif mode == "status":
         p = os.path.join(out, "pass.json")
         done = os.path.exists(p) and json.load(open(p)).get("posts", 0) > 0

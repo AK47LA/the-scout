@@ -627,7 +627,7 @@ def page(s, i, total, ctx, deck):
         if s["kind"] == "cover":
             seal += (f'<span aria-hidden="true" style="position:absolute;left:14px;top:150px;writing-mode:vertical-rl;transform:rotate(180deg);font-family:{t["vertical"]};'
                      f'font-size:46px;line-height:1;letter-spacing:0.08em;color:{t["ice"]};text-shadow:3px 3px 0 {t["navy"]},6px 6px 0 {t["amber"]};z-index:2;filter:url(#distress)">'
-                     f'{html.escape(deck.get("vertical_title", "THE SCOUT"))}</span>')
+                     f'{html.escape(deck.get("vertical_title", deck.get("brand", "THE SCOUT")))}</span>')
     ftr = (f'<div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding-top:18px;border-top:1.5px solid {c["rule"]};font-family:{t["mono"]};font-size:17px;letter-spacing:0.06em;color:{c["muted"]}">'
            f'<span>{ctx.txt(s.get("source"))}</span><span style="letter-spacing:0.14em">{html.escape(deck.get("mark", ""))}</span></div>')
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{html.escape(deck.get("brand", ""))} {i:02d}</title>'

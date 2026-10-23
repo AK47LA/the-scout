@@ -1,0 +1,143 @@
+{
+ "niche": "Games",
+ "updated": "2026-10-23",
+ "rule": "Add a handle only after reading its profile and matching the name; never guess one.",
+ "why": "X is where news in this niche breaks first. xpublic.py reads these accounts' public posts every week without a login.",
+ "accounts": [
+  {
+   "handle": "PopCrave",
+   "lane": "entertainment-and-culture",
+   "name": "Pop Crave"
+  },
+  {
+   "handle": "PopBase",
+   "lane": "entertainment-and-culture",
+   "name": "Pop Base"
+  },
+  {
+   "handle": "Variety",
+   "lane": "entertainment-and-culture",
+   "name": "Variety"
+  },
+  {
+   "handle": "THR",
+   "lane": "entertainment-and-culture",
+   "name": "The Hollywood Reporter"
+  },
+  {
+   "handle": "DEADLINE",
+   "lane": "entertainment-and-culture",
+   "name": "Deadline"
+  },
+  {
+   "handle": "DiscussingFilm",
+   "lane": "entertainment-and-culture",
+   "name": "DiscussingFilm"
+  },
+  {
+   "handle": "netflix",
+   "lane": "entertainment-and-culture",
+   "name": "Netflix"
+  },
+  {
+   "handle": "YouTube",
+   "lane": "entertainment-and-culture",
+   "name": "YouTube"
+  },
+  {
+   "handle": "IGN",
+   "lane": "entertainment-and-culture",
+   "name": "IGN"
+  },
+  {
+   "handle": "allkpop",
+   "lane": "entertainment-and-culture",
+   "name": "allkpop"
+  },
+  {
+   "handle": "bilawalsidhu",
+   "lane": "creative-ai",
+   "name": "Bilawal Sidhu"
+  },
+  {
+   "handle": "higgsfield_ai",
+   "lane": "creative-ai",
+   "name": "Higgsfield AI 🧩"
+  },
+  {
+   "handle": "krea_ai",
+   "lane": "creative-ai",
+   "name": "Krea"
+  },
+  {
+   "handle": "runwayml",
+   "lane": "creative-ai",
+   "name": "Runway"
+  },
+  {
+   "handle": "LumaLabsAI",
+   "lane": "creative-ai",
+   "name": "Luma"
+  },
+  {
+   "handle": "suno",
+   "lane": "creative-ai",
+   "name": "Suno"
+  },
+  {
+   "handle": "udiomusic",
+   "lane": "creative-ai",
+   "name": "udio"
+  },
+  {
+   "handle": "elevenlabs",
+   "lane": "creative-ai",
+   "name": "ElevenLabs"
+  },
+  {
+   "handle": "AnthropicAI",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "claudeai",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "OpenAI",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "GoogleDeepMind",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "AIatMeta",
+   "lane": "labs",
+   "name": null
+  },
+  {
+   "handle": "sama",
+   "lane": "labs",
+   "name": "Sam Altman"
+  },
+  {
+   "handle": "gdb",
+   "lane": "labs",
+   "name": "Greg Brockman"
+  },
+  {
+   "handle": "OfficialLoganK",
+   "lane": "labs",
+   "name": "Logan Kilpatrick"
+  },
+  {
+   "handle": "bcherny",
+   "lane": "labs",
+   "name": "Boris Cherny"
+  }
+ ]
+}
