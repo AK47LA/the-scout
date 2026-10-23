@@ -1,0 +1,70 @@
+{
+ "brand": "THE SCOUT",
+ "series": "MY NICHE",
+ "date": "THIS WEEK",
+ "mark": "MY NAME",
+ "theme": "kaiju",
+ "slides": [
+  {
+   "id": "cover",
+   "kind": "cover",
+   "tag": "FIRST RUN",
+   "headline_size": 120,
+   "headline": "My niche, with its history.",
+   "sub": "Behaviour data from public sources, flagged by one fixed rule.",
+   "voiceover": "This is the first Scout edition for my niche: behaviour data with history, flagged by one fixed rule.",
+   "source": "Edit the headline and footer marks in this file"
+  },
+  {
+   "id": "wikipedia",
+   "kind": "signal_board",
+   "signal_source": "wikipedia",
+   "eyebrow": "ATTENTION",
+   "headline": "Who people are reading about.",
+   "note": "Weekly Wikipedia views, last 52 weeks. Red bars: the last 8 weeks of a name the rule flagged.",
+   "voiceover": "First, attention: weekly Wikipedia views for each name, with a year of history behind them.",
+   "source": "Source: Wikimedia pageviews API, agent=user",
+   "untraced_ok": [
+    {
+     "value": "52",
+     "reason": "chart window length"
+    },
+    {
+     "value": "8",
+     "reason": "recent-weeks highlight length"
+    }
+   ]
+  },
+  {
+   "id": "bluesky",
+   "kind": "signal_board",
+   "signal_source": "bluesky",
+   "eyebrow": "CONVERSATION",
+   "headline": "Who people are posting about.",
+   "note": "Weekly Bluesky posts matching each search, last 52 weeks.",
+   "voiceover": "Then conversation: weekly posts on Bluesky for the same names.",
+   "source": "Source: Bluesky public search",
+   "untraced_ok": [
+    {
+     "value": "52",
+     "reason": "chart window length"
+    },
+    {
+     "value": "8",
+     "reason": "recent-weeks highlight length"
+    }
+   ]
+  },
+  {
+   "id": "gate",
+   "kind": "quote",
+   "eyebrow": "THE RULE",
+   "headline": "Proof before claims.",
+   "body": "{{radar_gate.reason}}",
+   "attribution": "LEAD-TIME LEDGER",
+   "quote": "Five articles repeating one announcement count as one signal.",
+   "voiceover": "And the rule that keeps it honest: {{radar_gate.reason}}",
+   "source": "Source: lead-time ledger"
+  }
+ ]
+}

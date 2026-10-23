@@ -1,0 +1,66 @@
+{
+ "watch_id": "indie-games",
+ "niche": "Indie games",
+ "start": "2023-01-02",
+ "entities": [
+  {
+   "name": "Balatro",
+   "wikipedia": "Balatro",
+   "bluesky": "balatro"
+  },
+  {
+   "name": "Hollow Knight: Silksong",
+   "wikipedia": "Hollow Knight: Silksong",
+   "bluesky": "silksong"
+  },
+  {
+   "name": "Schedule I",
+   "wikipedia": "Schedule I (video game)",
+   "bluesky": "schedule 1 game"
+  },
+  {
+   "name": "R.E.P.O.",
+   "wikipedia": "R.E.P.O.",
+   "bluesky": "repo game"
+  },
+  {
+   "name": "Peak",
+   "wikipedia": "Peak (video game)",
+   "bluesky": "peak game"
+  },
+  {
+   "name": "Blue Prince",
+   "wikipedia": "Blue Prince (video game)",
+   "bluesky": "blue prince"
+  }
+ ],
+ "controls": [
+  {
+   "name": "Coffee",
+   "wikipedia": "Coffee",
+   "bluesky": "coffee"
+  },
+  {
+   "name": "Chess",
+   "wikipedia": "Chess",
+   "bluesky": "chess"
+  },
+  {
+   "name": "Bicycle",
+   "wikipedia": "Bicycle",
+   "bluesky": "bicycle"
+  }
+ ],
+ "rule": {
+  "baseline_weeks": 52,
+  "threshold_mads": 3,
+  "consecutive": 2,
+  "min_volume": {
+   "wikipedia": 500,
+   "hackernews": 3,
+   "bluesky": 50,
+   "github": 100
+  }
+ },
+ "made_at": "2026-10-22"
+}

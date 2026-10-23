@@ -1,0 +1,13 @@
+{"watch_id": "my-niche",
+ "start": "2023-01-02",
+ "entities": [
+  {"name": "Example thing one", "wikipedia": "Exact Wikipedia title", "hackernews": "search words", "bluesky": "search words"},
+  {"name": "Example open-source tool", "github": "owner/repo", "hackernews": "tool name"},
+  {"name": "Example artist", "wikipedia": "Artist (musician)", "bluesky": "artist name", "spotify_artist": "spotify artist id", "kworb_us": "artist name"}],
+ "controls": [
+  {"name": "Coffee", "wikipedia": "Coffee", "bluesky": "coffee"},
+  {"name": "Chess", "wikipedia": "Chess", "bluesky": "chess"},
+  {"name": "Python", "hackernews": "python"},
+  {"name": "Linux", "hackernews": "linux"}],
+ "rule": {"baseline_weeks": 52, "threshold_mads": 3, "consecutive": 2, "min_volume": {"wikipedia": 500, "hackernews": 3, "bluesky": 50}},
+ "notes": "Pick 3 to 12 names in your niche. Controls are steady, unrelated topics that absorb platform-wide swings. Fix both lists before you look at the results."}

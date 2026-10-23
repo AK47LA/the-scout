@@ -1,0 +1,66 @@
+{
+ "watch_id": "music",
+ "niche": "Music",
+ "start": "2023-01-02",
+ "entities": [
+  {
+   "name": "Chappell Roan",
+   "wikipedia": "Chappell Roan",
+   "bluesky": "chappell roan"
+  },
+  {
+   "name": "Doechii",
+   "wikipedia": "Doechii",
+   "bluesky": "doechii"
+  },
+  {
+   "name": "PinkPantheress",
+   "wikipedia": "PinkPantheress",
+   "bluesky": "pinkpantheress"
+  },
+  {
+   "name": "Ethel Cain",
+   "wikipedia": "Ethel Cain",
+   "bluesky": "ethel cain"
+  },
+  {
+   "name": "Olivia Dean",
+   "wikipedia": "Olivia Dean",
+   "bluesky": "olivia dean"
+  },
+  {
+   "name": "Katseye",
+   "wikipedia": "Katseye",
+   "bluesky": "katseye"
+  }
+ ],
+ "controls": [
+  {
+   "name": "Coffee",
+   "wikipedia": "Coffee",
+   "bluesky": "coffee"
+  },
+  {
+   "name": "Chess",
+   "wikipedia": "Chess",
+   "bluesky": "chess"
+  },
+  {
+   "name": "Bicycle",
+   "wikipedia": "Bicycle",
+   "bluesky": "bicycle"
+  }
+ ],
+ "rule": {
+  "baseline_weeks": 52,
+  "threshold_mads": 3,
+  "consecutive": 2,
+  "min_volume": {
+   "wikipedia": 500,
+   "hackernews": 3,
+   "bluesky": 50,
+   "github": 100
+  }
+ },
+ "made_at": "2026-10-22"
+}

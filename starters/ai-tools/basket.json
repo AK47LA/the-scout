@@ -1,0 +1,83 @@
+{
+ "watch_id": "ai-tools",
+ "niche": "AI tools",
+ "start": "2023-01-02",
+ "entities": [
+  {
+   "name": "Claude",
+   "wikipedia": "Claude (language model)",
+   "bluesky": "claude ai",
+   "hackernews": "claude ai"
+  },
+  {
+   "name": "ChatGPT",
+   "wikipedia": "ChatGPT",
+   "bluesky": "chatgpt",
+   "hackernews": "chatgpt"
+  },
+  {
+   "name": "Cursor",
+   "wikipedia": "Cursor (code editor)",
+   "bluesky": "cursor ai",
+   "hackernews": "cursor ai"
+  },
+  {
+   "name": "Perplexity AI",
+   "wikipedia": "Perplexity AI",
+   "bluesky": "perplexity ai",
+   "hackernews": "perplexity ai"
+  },
+  {
+   "name": "Suno AI",
+   "wikipedia": "Suno AI",
+   "bluesky": "suno ai"
+  },
+  {
+   "name": "ElevenLabs",
+   "wikipedia": "ElevenLabs",
+   "bluesky": "elevenlabs",
+   "hackernews": "elevenlabs"
+  }
+ ],
+ "controls": [
+  {
+   "name": "Coffee",
+   "wikipedia": "Coffee",
+   "bluesky": "coffee"
+  },
+  {
+   "name": "Chess",
+   "wikipedia": "Chess",
+   "bluesky": "chess"
+  },
+  {
+   "name": "Bicycle",
+   "wikipedia": "Bicycle",
+   "bluesky": "bicycle"
+  },
+  {
+   "name": "Python",
+   "hackernews": "python"
+  },
+  {
+   "name": "Linux",
+   "hackernews": "linux"
+  },
+  {
+   "name": "PostgreSQL",
+   "hackernews": "postgres"
+  }
+ ],
+ "rule": {
+  "baseline_weeks": 52,
+  "threshold_mads": 3,
+  "consecutive": 2,
+  "min_volume": {
+   "wikipedia": 500,
+   "hackernews": 3,
+   "bluesky": 50,
+   "github": 100
+  }
+ },
+ "made_at": "2026-10-22"
+}

@@ -1,0 +1,8 @@
+[
+ {"id": "billboard", "name": "Billboard", "sitemaps": ["https://www.billboard.com/post-sitemap{yyyymm}.xml", "https://www.billboard.com/billboard_pro_post-sitemap{yyyymm}.xml"]},
+ {"id": "mbw", "name": "Music Business Worldwide", "sitemaps": ["https://www.musicbusinessworldwide.com/sitemap.xml"]},
+ {"id": "variety", "name": "Variety", "sitemaps": ["https://variety.com/post-sitemap{yyyymm}.xml"]},
+ {"id": "the-verge", "name": "The Verge", "sitemaps": ["https://www.theverge.com/sitemaps/entries/{yyyy}/{m}"]},
+ {"id": "rolling-stone", "name": "Rolling Stone", "sitemaps": ["https://www.rollingstone.com/post-sitemap{yyyymm}.xml"]},
+ {"id": "nyt", "name": "The New York Times", "sitemaps": ["https://www.nytimes.com/sitemaps/new/sitemap-{yyyy}-{mm}.xml.gz"]}
+]

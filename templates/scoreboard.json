@@ -1,0 +1,92 @@
+{
+ "brand": "THE SCOUT",
+ "series": "WEEKLY SCOREBOARD",
+ "date": "THIS WEEK",
+ "mark": "",
+ "theme": "kaiju",
+ "slides": [
+  {
+   "id": "cover",
+   "kind": "cover",
+   "headline_size": 118,
+   "tag": "AUTOMATIC WEEKLY RUN",
+   "headline": "The numbers, before the opinions.",
+   "sub": "Data refreshed automatically. Judgment comes in the written edition.",
+   "stamps_row": [
+    {
+     "value": "{{calls.open}}",
+     "icon": "lens",
+     "label": "OPEN CALLS"
+    },
+    {
+     "value": "{{ledger_rows}}",
+     "icon": "eye",
+     "label": "LEDGER ROWS"
+    },
+    {
+     "value": "{{ledger_resolved_hits}}",
+     "icon": "radar",
+     "label": "EARLY HITS",
+     "alert": true
+    }
+   ],
+   "voiceover": "This is the Scout's automatic weekly scoreboard. Open calls: {{calls.open}}. Early hits so far: {{ledger_resolved_hits}}.",
+   "source": "Automatic weekly run"
+  },
+  {
+   "id": "attention",
+   "kind": "signal_board",
+   "signal_source": "wikipedia",
+   "eyebrow": "ATTENTION",
+   "headline": "Who people are reading about.",
+   "note": "Weekly Wikipedia views, last 52 weeks. Red bars: the last 8 weeks of a name the rule flagged.",
+   "untraced_ok": [
+    {
+     "value": "52",
+     "reason": "chart window length"
+    },
+    {
+     "value": "8",
+     "reason": "recent-weeks highlight length"
+    }
+   ],
+   "voiceover": "Attention first: weekly Wikipedia views for everything you watch.",
+   "source": "Source: Wikimedia pageviews API, agent=user"
+  },
+  {
+   "id": "conversation",
+   "kind": "signal_board",
+   "signal_source": "bluesky",
+   "eyebrow": "CONVERSATION",
+   "headline": "Who people are posting about.",
+   "note": "Weekly Bluesky posts matching each search, last 52 weeks.",
+   "untraced_ok": [
+    {
+     "value": "52",
+     "reason": "chart window length"
+    }
+   ],
+   "voiceover": "Then conversation: weekly posts on Bluesky.",
+   "source": "Source: Bluesky public search"
+  },
+  {
+   "id": "calls",
+   "kind": "calls",
+   "eyebrow": "ON THE RECORD",
+   "headline": "Calls on the record.",
+   "voiceover": "{{calls.open}} calls are open, {{calls.hits}} hit, {{calls.misses}} missed.",
+   "source": "Source: calls ledger"
+  },
+  {
+   "id": "gate",
+   "kind": "quote",
+   "eyebrow": "THE RULE",
+   "headline": "Proof before claims.",
+   "body": "{{radar_gate.reason}}",
+   "attribution": "LEAD-TIME LEDGER",
+   "quote": "Five articles repeating one announcement count as one signal.",
+   "voiceover": "The rule that keeps it honest: {{radar_gate.reason}}",
+   "source": "Source: lead-time ledger"
+  }
+ ]
+}
