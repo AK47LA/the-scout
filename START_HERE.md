@@ -1,66 +1,69 @@
-# Start here: your niche's first Scout edition
+# Start here
 
-About 10 minutes, no accounts or keys. You get a 4:5 poster-style edition with a year of real behaviour data for the names you care about, a PDF, a spoken brief and a video.
+The Scout watches the things you care about (artists, products, tools, shows) using public data with years of history, flags real changes with one fixed rule, and turns it into a poster-style edition: a PDF, a spoken brief and a short video. About 10 minutes the first time. No accounts or keys needed.
 
-## 1. Install
+## The easy way: double-click
 
-You need Python 3.9 or later, Google Chrome (or Chromium), and ffmpeg (`brew install ffmpeg` on a Mac). Then link this folder into your agent:
+1. Unzip the folder anywhere, for example your Documents.
+2. Double-click **Install The Scout**.
+   - If your Mac says it "can't be opened because it is from an unidentified developer", right-click (or Control-click) the file, choose **Open**, then **Open** again. You only do this once per file.
+3. A window opens and asks three things:
+   - your niche (for example K-pop, indie games, skincare, AI tools)
+   - 3 to 10 things to watch, separated by commas
+   - your name for the footer (optional)
+4. It finds each one on Wikipedia and shows a short description, so you can confirm it picked the right one. Type the number of the right match, or just press Return for the first.
+5. Wait a few minutes while it pulls the history. Your edition opens by itself when it's ready.
+
+Your editions live in **Documents › The Scout**, one folder per niche.
+
+Every week after that, double-click **Make my Scout edition** to refresh it with new data. To watch a different niche, double-click **Start a new niche**.
+
+What the installer needs: Python (your Mac offers to install it if it's missing), Google Chrome or another Chromium browser such as Edge or Brave, and optionally ffmpeg for the audio and video. If ffmpeg is missing and you have Homebrew, the installer adds it; if not, you still get the PDF and images.
+
+## The agent way: just ask
+
+If you use Codex or Claude Code, run the installer once, then say:
+
+> Set up The Scout for K-pop, watching NewJeans, ILLIT and KATSEYE.
+
+Your agent runs the same setup for you, reads the results, and can write a fuller weekly edition with judgment, dated calls and a lead-time ledger. Ask it "what's moving this week?" after each refresh.
+
+## Ready-made starters
+
+Want to see it work before choosing your own? Start from one of these:
 
 ```bash
-ln -s "$PWD" ~/.codex/skills/the-scout
+python3 scripts/scout.py starter music
+```
+
+The other starters are `games` (indie games) and `ai-tools`.
+
+## The terminal way
+
+```bash
+bash install.sh
 ```
 
 ```bash
-mkdir -p ~/.claude/skills && ln -s "$PWD" ~/.claude/skills/the-scout
+python3 scripts/scout.py setup --niche "K-pop" --names "NewJeans, ILLIT, KATSEYE" --mark "Your Name" --yes
 ```
-
-Check it works offline:
 
 ```bash
-python3 scripts/self_test.py
+python3 scripts/scout.py run
 ```
 
-## 2. Pick your names
-
-Copy `templates/signals-basket-example.json` to `my-basket.json`. List 3 to 12 things in your niche: artists, products, tools, games, shows. For each, add whichever sources fit:
-
-- `wikipedia`: the exact article title
-- `bluesky` and `hackernews`: the words people actually use
-- `github`: `owner/repo` for open-source tools
-
-Keep the controls: steady, unrelated topics that absorb platform-wide swings. Fix both lists before you look at any results. Then let the tool confirm your titles:
-
-```bash
-python3 scripts/signals.py check my-basket.json --fix
-```
-
-## 3. Make the edition
-
-Copy `templates/starter-edition.json` to `my-edition.json` and change the headline, series and mark to your niche and name. Then:
-
-```bash
-python3 scripts/run.py --out my-scout --signals my-basket.json --pull --slides my-edition.json --media
-```
-
-The first pull takes a few minutes, because it fetches up to four years of weekly history. After that it reuses the cache. Your edition is in `my-scout/frames/`: PNGs, `edition.pdf`, `brief.mp3` and `edition.mp4`.
-
-## 4. Get ahead, honestly
-
-- `python3 scripts/discover.py my-scout/discovery.json` lists things gaining attention fast.
-- `python3 scripts/calls.py propose my-scout/discovery.json templates/benchmark_outlets.json my-scout/proposals.json` drops anything the big outlets already named. What's left is your chance to call it first: write it down with a date in a calls file.
-- Run the same command next week. Calls resolve themselves against the press, and a hit becomes proof in your lead-time ledger.
-- Your edition can't claim you were early until the ledger shows it. That's the point.
+Everything underneath is plain Python in `scripts/`. `README.md` lists every command, and `SKILL.md` is the playbook agents follow.
 
 ## Optional keys
 
-Add any of these to the macOS keychain, or as environment variables named `SCOUT_` plus the name in capitals. Each switches a source on. Keys never touch your files.
+Each key switches on more. Add one by running its command and pasting the key when asked. It's stored in your Mac's keychain, never in a file.
 
 ```bash
-security add-generic-password -a "$USER" -s scout-elevenlabs -w
+security add-generic-password -U -a "$USER" -s scout-elevenlabs -w
 ```
 
-The same command works for `scout-youtube`, `scout-github`, `scout-spotify-id`, `scout-spotify-secret` and `scout-higgsfield` (Higgsfield keys look like `KEY_ID:SECRET`; they power the cover drawings and the animated intro): change the name after `-s`, then paste the key when it asks. Set the narrator with `"voice": {"voice_id": "..."}` in your edition file.
+The same command works for `scout-youtube` (YouTube data), `scout-github` (faster GitHub pulls), `scout-spotify-id` and `scout-spotify-secret` (Spotify artist data), and `scout-higgsfield` (cover drawings and an animated intro; the key looks like `KEY_ID:SECRET`). Change the name after `-s`. With an ElevenLabs key you can pick a narrator by adding `"voice": {"voice_id": "..."}` to your edition file.
 
 ## What it never does
 
-Post, send, schedule, sign in, scrape gated platforms, or tell you something is a trend because it got loud.
+Post, send, schedule anything without you, sign in to your accounts, scrape sites that need a login, or call something a trend just because it got loud. It can't claim you spotted something early until its own ledger proves it.
