@@ -225,9 +225,10 @@ def chip(ctx, label, status):
     if t.get("stamps"):
         col = t["amber"] if status in ("HOLD", "CUT") else (t["ice"] if status in ("ACCEPT", "KEEP") else t["muted_dark"])
         ic = {"ACCEPT": "check", "KEEP": "check", "HOLD": "lens", "CUT": "cross", "CHANGE": "radar", "WATCH": "eye", "FLAG": "radar",
-              "CALL": "lens", "PROVE": "check", "OPEN": "lens", "HIT": "check", "MISS": "cross", "VOID": "cross"}.get(status, "")
-        if status in ("WATCH", "FLAG", "CALL", "PROVE"):
-            col = t["amber"] if status == "FLAG" else t["ice"]
+              "CALL": "lens", "PROVE": "check", "OPEN": "lens", "HIT": "check", "MISS": "cross", "VOID": "cross",
+              "WHAT": "eye", "MOVE": "check", "NEXT": "radar"}.get(status, "")
+        if status in ("WATCH", "FLAG", "CALL", "PROVE", "WHAT", "MOVE", "NEXT"):
+            col = t["amber"] if status in ("FLAG", "MOVE") else t["ice"]
         return (f'<span style="justify-self:start;display:inline-flex;align-items:center;gap:10px;transform:rotate(-2deg);filter:url(#rough);'
                 f'font-family:{t["mono"]};font-size:17px;font-weight:700;letter-spacing:0.14em;padding:9px 13px;border:3px solid {col};'
                 f'border-radius:3px;color:{col};background:{rgba(t["deep"], 0.35)}">{icon(ic, col, 26)}{html.escape(label)}</span>')
@@ -463,7 +464,7 @@ def k_groups(s, c, ctx):
     t = ctx.t
     groups = ""
     for g in s.get("groups", []):
-        items = "".join(f'<span style="font-size:25px;line-height:1.4"><b style="font-weight:600">{ctx.txt(i.get("lead"))}</b> {ctx.txt(i.get("text"))}</span>' for i in g.get("items", []))
+        items = "".join(f'<span style="font-size:{s.get("item_size", 27)}px;line-height:1.4"><b style="font-weight:600">{ctx.txt(i.get("lead"))}</b> {ctx.txt(i.get("text"))}</span>' for i in g.get("items", []))
         groups += (f'<div style="display:grid;grid-template-columns:150px minmax(0,1fr);gap:28px;align-items:start;padding:22px 0;border-top:1.5px solid {c["rule"]}">'
                    f'{chip(ctx, g["label"], g["label"])}<div style="display:flex;flex-direction:column;gap:12px;min-width:0">{items}</div></div>')
     top = head(s, c, ctx, 66)

@@ -29,7 +29,11 @@ def say(msg=""):
 
 
 def ask(q, default=None):
-    a = input(f"{q}{f' [{default}]' if default else ''}: ").strip()
+    try:
+        a = input(f"{q}{f' [{default}]' if default else ''}: ").strip()
+    except EOFError:  # no keyboard attached (an agent or a script): take the default
+        say("")
+        a = ""
     return a or (default or "")
 
 
@@ -189,7 +193,7 @@ def main():
         say("The Scout\n\nA few questions, then it builds your first edition from public data with years of history.\n")
         niche = getattr(a, "niche", None) or ask("What's your niche (for example K-pop, indie games, skincare, AI tools)")
         names = getattr(a, "names", None) or ask("Name 3 to 10 things to watch: artists, products, tools, shows. Separate them with commas")
-        mark = getattr(a, "mark", None) if getattr(a, "mark", None) is not None else ask("Your name or brand for the footer (optional)", "")
+        mark = a.mark if getattr(a, "mark", None) is not None else ("" if getattr(a, "yes", False) else ask("Your name or brand for the footer (optional)", ""))
         items = [x.strip() for x in names.split(",") if x.strip()][:12]
         if len(items) < 1:
             sys.exit("Add at least one thing to watch.")
