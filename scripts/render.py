@@ -110,7 +110,9 @@ class Ctx:
 
     def txt(self, s):
         out, _ = copycheck.resolve(s or "", self.data)
-        return html.escape(out).replace("\n", "<br>")
+        out = html.escape(out).replace("\n", "<br>")
+        # links stay clickable in the text PDF
+        return re.sub(r"(https?://[^\s<]+[^\s<.,;:)])", r'<a href="\1" style="color:inherit;text-decoration:underline">\1</a>', out)
 
     def fig(self, key):
         return copycheck.lookup(self.data, key)
@@ -271,7 +273,7 @@ def k_day_bars(s, c, ctx):
             cells += (f'<div style="height:340px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:10px">'
                       f'<span style="font-family:{t["display"]};font-size:34px">{v}</span><div style="width:100%;height:{round(280 * v / top)}px;background:{t["cyan"]};border-radius:4px 4px 0 0"></div></div>')
         else:
-            cells += f'<div style="height:340px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center"><div style="width:6px;height:6px;border-radius:50%;background:{rgba(t['ice'], 0.32)}"></div></div>'
+            cells += f'<div style="height:340px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center"><div style="width:6px;height:6px;border-radius:50%;background:{rgba(t["ice"], 0.32)}"></div></div>'
         strong = f"color:{c['fg']};font-weight:600;" if v else ""
         axis += f'<span style="text-align:center;{strong}">{d.day}</span>'
     brackets = ""
@@ -289,7 +291,7 @@ def k_day_bars(s, c, ctx):
     body = f'<p style="margin:0;font-size:28px;line-height:1.45;max-width:900px">{ctx.txt(s.get("body"))}</p>' if s.get("body") else ""
     return (head(s, c, ctx, 84) +
             f'<div style="display:flex;flex-direction:column;gap:14px"><span style="font-family:{t["mono"]};font-size:17px;letter-spacing:0.12em;color:{c["muted"]}">{ctx.txt(s.get("chart_label", "RECORDS FIRST SEEN PER DAY, UTC"))}</span>'
-            f'<div style="display:grid;grid-template-columns:{cols};gap:6px;align-items:end;border-bottom:1.5px solid {rgba(t['ice'], 0.4)}">{cells}</div>'
+            f'<div style="display:grid;grid-template-columns:{cols};gap:6px;align-items:end;border-bottom:1.5px solid {rgba(t["ice"], 0.4)}">{cells}</div>'
             f'<div style="display:grid;grid-template-columns:{cols};gap:6px;font-family:{t["mono"]};font-size:15px;color:{c["muted"]}">{axis}</div>'
             f'<div style="display:grid;grid-template-columns:{cols};gap:6px;font-family:{t["mono"]};font-size:15px;letter-spacing:0.08em;line-height:1.4">{brackets}</div></div>'
             f'<div style="display:grid;grid-template-columns:repeat({max(1, len(s.get("stats", [])))},minmax(0,1fr));gap:28px;padding-top:28px;border-top:1.5px solid {c["rule"]}">{stats}</div>{body}')
@@ -449,7 +451,7 @@ def k_metric_chart(s, c, ctx):
             f'<div style="display:flex;flex-direction:column;gap:14px;padding:26px 24px 22px;background:{t["panel_dark"]};border-radius:12px">'
             f'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px"><span style="font-size:28px;font-weight:600;line-height:1.2">{ctx.txt(s.get("title"))}</span>'
             f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.12em;color:{t["cyan"]};white-space:nowrap">{ctx.txt(s.get("unit"))}</span></div>'
-            f'<div style="padding-top:34px"><div role="img" aria-label="{aria}" style="display:grid;grid-template-columns:repeat({n},minmax(0,1fr));gap:4px;align-items:end;height:250px;border-bottom:1.5px solid {rgba(t['ice'], 0.4)}">{bars}</div>'
+            f'<div style="padding-top:34px"><div role="img" aria-label="{aria}" style="display:grid;grid-template-columns:repeat({n},minmax(0,1fr));gap:4px;align-items:end;height:250px;border-bottom:1.5px solid {rgba(t["ice"], 0.4)}">{bars}</div>'
             f'<div style="display:grid;grid-template-columns:repeat({n},minmax(0,1fr));gap:4px;font-family:{t["mono"]};font-size:15px;color:{t["muted_dark"]}">{yrs}</div></div>'
             f'<span style="font-size:21px;line-height:1.45;color:{t["muted_dark"]}">{ctx.txt(s.get("caption"))}</span></div>'
             + (f'<div style="display:flex;flex-wrap:wrap;gap:12px">{pills}</div>' if pills else "") + callout)
@@ -512,19 +514,21 @@ def k_signal_board(s, c, ctx):
             continue
         tail = e.get("tail52") or []
         top = max(tail) or 1
-        bars = "".join(f'<div style="height:{max(2, round(64 * v / top))}px;background:{t["amber"] if (e.get("flagged_recent") and i >= len(tail) - 8) else t["ice"]};opacity:{0.95 if i >= len(tail) - 8 else 0.7}"></div>' for i, v in enumerate(tail))
+        bars = "".join(f'<div style="height:{0 if not v or v <= 0 else max(2, round(64 * v / top))}px;background:{t["amber"] if (e.get("flagged_recent") and i >= len(tail) - 8) else t["ice"]};opacity:{0.95 if i >= len(tail) - 8 else 0.7}"></div>' for i, v in enumerate(tail))
         flag = e.get("first_flag_week")
         if e.get("flagged_recent"):
             tag = chip(ctx, "FLAGGED", "HOLD")
         else:
-            tag = f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.12em;color:{c["muted"]}">QUIET</span>'
+            tag = f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.12em;color:{c["muted"]}">NO FLAG</span>'
         last = tail[-1] if tail else 0
         rows += (f'<div style="display:grid;grid-template-columns:260px minmax(0,1fr) 150px;gap:20px;align-items:end;padding:14px 0;border-top:1.5px solid {c["rule"]}">'
                  f'<div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:24px;font-weight:600;line-height:1.2">{html.escape(n)}</span>'
-                 f'<span style="font-family:{t["mono"]};font-size:14px;color:{c["muted"]}">LAST WEEK {last:,}</span></div>'
+                 f'<span style="font-family:{t["mono"]};font-size:14px;color:{c["muted"]}">LAST WEEK {last:,} · PEAK {top:,}</span></div>'
                  f'<div role="img" aria-label="{html.escape(n)}: 52 weeks of {src} values, latest {last:,}" style="display:grid;grid-template-columns:repeat({max(1, len(tail))},minmax(0,1fr));gap:2px;align-items:end;height:64px;{"filter:url(#rough);" if t.get("handmade") else ""}">{bars}</div>'
                  f'<div style="justify-self:end">{tag}</div></div>')
-    note = f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">{ctx.txt(s.get("note"))}</p>' if s.get("note") else ""
+    disclose = ("Each row is scaled to its own 52-week peak, so rows are not comparable in size. Blank weeks had no observations. "
+                "NO FLAG means the fixed rule found no anomaly, not that attention is falling.")
+    note = f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">{ctx.txt((s.get("note") or "") + " " + disclose)}</p>'
     return head(s, c, ctx, 76) + f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{rows}</div>' + note
 
 
@@ -615,7 +619,39 @@ def k_signal(s, c, ctx):
             f'<div style="display:flex;align-items:baseline;gap:22px"><span style="font-family:{t["display"]};{display_style(t, c["dark"], 120)}line-height:0.9">{ctx.txt(s.get("number"))}</span>'
             f'<span style="font-family:{t["mono"]};font-size:21px;font-weight:600;letter-spacing:0.16em;color:{c["accent"]}">{ctx.txt(s.get("eyebrow"))}</span></div>'
             f'<h2 style="margin:0;font-family:{t["display"]};font-weight:400;{display_style(t, c["dark"], s.get("headline_size", 74))}line-height:1.06;text-wrap:balance">{ctx.txt(s.get("headline"))}</h2>'
-            f'{img}<p style="margin:0;font-size:{s.get("what_size", 31)}px;line-height:1.4">{ctx.txt(s.get("what"))}</p>{so}</div>')
+            f'{img}<p style="margin:0;font-size:{s.get("what_size", 31)}px;line-height:1.4">{ctx.txt(s.get("what"))}</p>{so}'
+            + (f'<p style="margin:0;font-family:{t["mono"]};font-size:17px;line-height:1.5;color:{c["muted"]}">NOT YET PROVEN: {ctx.txt(s.get("caveat"))}</p>' if s.get("caveat") else "")
+            + '</div>')
+
+
+def k_story(s, c, ctx):
+    """An evidence-led story: one large screenshot, real output or chart, then what happened, why it matters,
+    our read (labelled interpretation), what is unproven, a bounded next step and what would change the read."""
+    t = ctx.t
+    ev = ""
+    if s.get("image_path"):
+        ev = (f'<div style="position:relative;border:8px solid {t["paper"]};box-shadow:{t["card_shadow"]};background:{s.get("image_bg", t["paper"])};height:{s.get("image_h", 420)}px;overflow:hidden">'
+              f'<img src="file://{html.escape(s["image_path"])}" style="width:100%;height:100%;object-fit:{s.get("image_fit", "cover")};object-position:{s.get("image_pos", "center top")};filter:{t.get("image_filter", "none")}">'
+              f'<span style="position:absolute;right:10px;top:10px;font-family:{t["mono"]};font-size:14px;font-weight:700;letter-spacing:0.12em;padding:6px 10px;background:{t["navy"]};color:{t["ice"]}">{ctx.txt(s.get("tag", "CAPTURE"))}</span></div>')
+    elif s.get("code"):
+        ev = (f'<div style="position:relative;background:#0d1110;border:3px solid {t["paper"]};padding:22px 26px;box-shadow:{t["card_shadow"]}">'
+              f'<pre style="margin:0;font-family:{t["mono"]};font-size:{s.get("code_size", 19)}px;line-height:1.5;color:#e9e3d2;white-space:pre-wrap">{html.escape(s["code"])}</pre>'
+              f'<span style="position:absolute;right:10px;top:10px;font-family:{t["mono"]};font-size:14px;font-weight:700;letter-spacing:0.12em;padding:6px 10px;background:{t["amber"]};color:{t["navy"]}">{ctx.txt(s.get("tag", "ACTUAL OUTPUT"))}</span></div>')
+    rows = "".join(f'<div style="display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;padding:10px 0;border-top:1.5px solid {c["rule"]}">'
+                   f'<span style="font-family:{t["mono"]};font-size:15px;font-weight:700;letter-spacing:0.12em;color:{t["amber"] if lab.startswith(("OUR READ", "YOUR TAKE", "NEXT")) else c["muted"]};padding-top:4px">{html.escape(lab)}</span>'
+                   f'<span style="font-size:{s.get("row_size", 23)}px;line-height:1.38">{ctx.txt(txt)}</span></div>' for lab, txt in s.get("rows", []))
+    return (head(s, c, ctx, s.get("headline_size", 60)) + f'<div style="display:flex;flex-direction:column;gap:18px">{ev}'
+            f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{rows}</div></div>')
+
+
+def k_receipts(s, c, ctx):
+    """Every source behind the edition, clickable in the text PDF, plus where the calls stand."""
+    t = ctx.t
+    items = "".join(f'<div style="display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;padding:8px 0;border-top:1px solid {c["rule"]}">'
+                    f'<span style="font-family:{t["mono"]};font-size:14px;font-weight:700;letter-spacing:0.08em;color:{c["muted"]}">{html.escape(lab)}</span>'
+                    f'<span style="font-size:17px;line-height:1.4;word-break:break-all">{ctx.txt(txt)}</span></div>' for lab, txt in s.get("links", []))
+    calls = f'<p style="margin:0;font-size:22px;line-height:1.45">{ctx.txt(s.get("calls", ""))}</p>' if s.get("calls") else ""
+    return head(s, c, ctx, 60) + f'<div style="display:flex;flex-direction:column;gap:16px">{calls}<div style="display:flex;flex-direction:column">{items}</div></div>'
 
 
 def k_signal_cover(s, c, ctx):
@@ -626,7 +662,98 @@ def k_signal_cover(s, c, ctx):
             f'<p style="margin:0;font-size:34px;line-height:1.4;max-width:860px">{ctx.txt(s.get("sub"))}</p></div>')
 
 
-KIND = {"signal": k_signal, "signal_cover": k_signal_cover, "backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
+def png_size(path):
+    with open(path, "rb") as f:
+        head_bytes = f.read(24)
+    return (int.from_bytes(head_bytes[16:20], "big"), int.from_bytes(head_bytes[20:24], "big")) if head_bytes[:8] == b"\x89PNG\r\n\x1a\n" else (1280, 1500)
+
+
+def sticker_filter(t):
+    p = t["paper"]
+    return f"drop-shadow(4px 0 0 {p}) drop-shadow(-4px 0 0 {p}) drop-shadow(0 4px 0 {p}) drop-shadow(0 -4px 0 {p}) drop-shadow(6px 6px 0 {t['navy']})"
+
+
+def cutout(ctx, sp, h):
+    """A receipt cut down to a sticker that sits between the words: centred on (cx, cy) of the image, at zoom.
+    With "figure", a cut-out person or object on a transparent ground, outlined like a die-cut sticker."""
+    t = ctx.t
+    if sp.get("figure"):
+        return (f'<img aria-hidden="true" src="file://{html.escape(sp["path"])}" style="display:inline-block;vertical-align:{sp.get("lift", "-0.2em")};height:{round(h * sp.get("scale", 1.3))}px;margin:0 0.06em;'
+                f'transform:rotate({sp.get("tilt", -4)}deg);filter:{sticker_filter(t)}">')
+    w = round(h * sp.get("aspect", 1.25))
+    iw, ih = png_size(sp["path"])
+    bw = w * sp.get("zoom", 3)
+    bh = bw * ih / iw
+    x = min(0, max(w - bw, w / 2 - sp.get("cx", 0.5) * bw))
+    y = min(0, max(h - bh, h / 2 - sp.get("cy", 0.5) * bh))
+    return (f'<span aria-hidden="true" style="display:inline-block;vertical-align:-0.1em;width:{w}px;height:{h}px;margin:0 0.1em;border:5px solid {t["paper"]};border-radius:14px;'
+            f'box-shadow:{t["card_shadow"]};transform:rotate({sp.get("tilt", -4)}deg);background:url(\'file://{html.escape(sp["path"])}\') {x:.0f}px {y:.0f}px/{bw:.0f}px {bh:.0f}px no-repeat"></span>')
+
+
+def k_take_cover(s, c, ctx):
+    """Carousel cover: big first-person words with receipts cut down to stickers between them, then one piece of art."""
+    t = ctx.t
+    size = s.get("size", 104)
+    cuts = s.get("cutouts", {})
+
+    def line(l):
+        parts = re.split(r"\{(\w+)\}", l)
+        return "".join(cutout(ctx, cuts[p], round(size * 0.74)) if i % 2 else ctx.txt(p) for i, p in enumerate(parts))
+    lines = "".join(f'<div style="font-family:{t["display"]};{display_style(t, c["dark"], size)}line-height:1.12">{line(l)}</div>' for l in s.get("lines", []))
+    art = ""
+    if s.get("image_path"):
+        art = (f'<div style="position:relative;align-self:flex-end;width:{s.get("image_w", 560)}px;height:{s.get("image_h", 380)}px;border:8px solid {t["paper"]};box-shadow:{t["card_shadow"]};overflow:hidden;transform:rotate(1.5deg)">'
+               f'<img src="file://{html.escape(s["image_path"])}" style="width:100%;height:100%;object-fit:cover;object-position:{s.get("image_pos", "center")}">'
+               + (f'<span style="position:absolute;left:10px;bottom:10px;font-family:{t["mono"]};font-size:13px;letter-spacing:0.1em;padding:5px 9px;background:{t["navy"]};color:{t["ice"]}">{ctx.txt(s["credit"])}</span>' if s.get("credit") else "")
+               + '</div>')
+    return (f'<div style="display:flex;flex-direction:column;gap:28px">'
+            + (f'<span style="font-family:{t["mono"]};font-size:{s.get("eyebrow_size", 22)}px;font-weight:700;letter-spacing:0.16em;color:{c["accent"]}">{ctx.txt(s["eyebrow"])}</span>' if s.get("eyebrow") else "")
+            + f'<div>{lines}</div>{art}'
+            + (f'<p style="margin:0;font-size:32px;line-height:1.4;max-width:880px">{ctx.txt(s.get("sub"))}</p>' if s.get("sub") else "") + '</div>')
+
+
+def k_take(s, c, ctx):
+    """One signal in the carousel format: a plain headline, the receipt, what happened, then the owner's take in the first person."""
+    t = ctx.t
+    ev = ""
+    if s.get("image_path") and s.get("crop"):  # an exact region of the capture, e.g. a press headline without the ads around it
+        x, y, w, h = s["crop"]
+        iw, ih = png_size(s["image_path"])
+        box = s.get("crop_w", 920)
+        k = min(box / w, s.get("crop_max_h", 10 ** 6) / h)  # a tall capture (an X post) shrinks to fit and sits centred
+        fit = w * k < box - 2  # narrower than the column: the frame hugs the capture instead of padding it
+        left = -x * k if fit else (box - w * k) / 2 - x * k
+        size = f'width:{round(w * k)}px;align-self:center;' if fit else ""
+        ev = (f'<div style="{size}border:8px solid {t["paper"]};box-shadow:{t["card_shadow"]};height:{round(h * k)}px;transform:rotate({s.get("tilt", -1)}deg);'
+              f'background:{s.get("crop_bg", "transparent")} url(\'file://{html.escape(s["image_path"])}\') {left:.0f}px {-y * k:.0f}px/{iw * k:.0f}px {ih * k:.0f}px no-repeat"></div>')
+    elif s.get("image_path"):
+        ev = (f'<div style="border:8px solid {t["paper"]};box-shadow:{t["card_shadow"]};background:{t["paper"]};height:{s.get("image_h", 380)}px;overflow:hidden;transform:rotate({s.get("tilt", -1)}deg)">'
+              f'<img src="file://{html.escape(s["image_path"])}" style="width:100%;height:100%;object-fit:cover;object-position:{s.get("image_pos", "center top")};filter:{t.get("image_filter", "none")}"></div>')
+    elif s.get("code"):
+        ev = (f'<div style="background:#0d1110;border:3px solid {t["paper"]};padding:20px 24px;box-shadow:{t["card_shadow"]}">'
+              f'<pre style="margin:0;font-family:{t["mono"]};font-size:{s.get("code_size", 18)}px;line-height:1.5;color:#e9e3d2;white-space:pre-wrap">{html.escape(s["code"])}</pre></div>')
+    elif s.get("post"):  # a quoted post, word for word, as the receipt
+        q = s["post"]
+        ev = (f'<div style="background:{t["paper"]};color:{t["navy"]};box-shadow:{t["card_shadow"]};padding:28px 34px;transform:rotate({s.get("tilt", -1)}deg)">'
+              f'<div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap"><b style="font-size:26px">{html.escape(q["name"])}</b>'
+              f'<span style="font-family:{t["mono"]};font-size:18px;opacity:.7">{html.escape(q["handle"])} · {html.escape(q["when"])}</span></div>'
+              f'<p style="margin:14px 0 0;font-size:{s.get("post_size", 28)}px;line-height:1.42">{html.escape(q["text"])}</p>'
+              + (f'<div style="margin-top:16px;font-family:{t["mono"]};font-size:17px;letter-spacing:.06em;opacity:.7">{html.escape(q["stats"])}</div>' if q.get("stats") else "") + '</div>')
+    if ev and s.get("sticker"):  # a small cut-out of the owner on the corner of the receipt
+        st = s["sticker"]
+        ev = (f'<div style="position:relative">{ev}<img aria-hidden="true" src="file://{html.escape(st["path"])}" style="position:absolute;right:{st.get("right", -24)}px;{f'top:{st["top"]}px' if "top" in st else f'bottom:{st.get("bottom", -40)}px'};'
+              f'height:{st.get("h", 240)}px;transform:rotate({st.get("tilt", 5)}deg);filter:{sticker_filter(t)};z-index:3"></div>')
+    size = s.get("what_size", 29)
+    notes = s.get("notes") or ([[s.get("caveat_label", "NOT PROVEN"), s["caveat"]]] if s.get("caveat") else [])
+    note = "".join(f'<p style="margin:0;font-family:{t["mono"]};font-size:17px;line-height:1.5;color:{c["muted"]}">{html.escape(lab)}: {ctx.txt(txt)}</p>' for lab, txt in notes)
+    return (f'<div style="display:flex;flex-direction:column;gap:24px">'
+            + (f'<span style="font-family:{t["mono"]};font-size:21px;font-weight:600;letter-spacing:0.16em;color:{c["accent"]}">{ctx.txt(s["eyebrow"])}</span>' if s.get("eyebrow") else "")
+            + f'<h2 style="margin:-4px 0 0;font-family:{t["display"]};font-weight:400;{display_style(t, c["dark"], s.get("headline_size", 76))}line-height:1.06;text-wrap:balance">{ctx.txt(s.get("headline"))}</h2>'
+            + ev + (f'<p style="margin:0;font-size:{size}px;line-height:1.42">{ctx.txt(s["what"])}</p>' if s.get("what") else "")
+            + f'<p style="margin:0;font-size:{size}px;line-height:1.42;font-weight:700;border-left:6px solid {c["accent"]};padding-left:20px">{ctx.txt(s.get("take"))}</p>{note}</div>')
+
+
+KIND = {"take": k_take, "take_cover": k_take_cover, "story": k_story, "receipts": k_receipts, "signal": k_signal, "signal_cover": k_signal_cover, "backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
         "radar": k_radar, "image_grid": k_image_grid, "metric_chart": k_metric_chart, "groups": k_groups,
         "tests": k_tests, "quote": k_quote}
 
@@ -655,10 +782,16 @@ def page(s, i, total, ctx, deck):
                      f'{html.escape(deck.get("vertical_title", deck.get("brand", "THE SCOUT")))}</span>')
     ftr = (f'<div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding-top:18px;border-top:1.5px solid {c["rule"]};font-family:{t["mono"]};font-size:17px;letter-spacing:0.06em;color:{c["muted"]}">'
            f'<span>{ctx.txt(s.get("source"))}</span><span style="letter-spacing:0.14em">{html.escape(deck.get("mark", ""))}</span></div>')
+    if deck.get("minimal"):  # a personal post: no masthead, stamps or source line, only the owner's handle
+        hdr, seal = "", ""
+        body = f'<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:48px;padding-bottom:28px">{body}</div>'
+        ftr = (f'<div style="position:relative;z-index:2;padding-top:18px;border-top:1.5px solid {c["rule"]};font-family:{t["mono"]};font-size:18px;letter-spacing:0.14em;color:{c["muted"]}">'
+               f'{html.escape(deck.get("mark", ""))}</div>')
+    overflow_js = OVERFLOW_JS.replace("__DISPLAY__", t["display"].split(",")[0].strip(" '"))
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{html.escape(deck.get("brand", ""))} {i:02d}</title>'
             f'<link rel="stylesheet" href="{t["fonts_url"]}"><style>body{{margin:0}}#frame>*:not(.tx){{position:relative;z-index:1}}</style></head><body>{HANDMADE_DEFS if t.get("handmade") else ""}'
             f'<div id="frame" style="width:1080px;height:1350px;box-sizing:border-box;padding:60px 72px 56px;background:{c["bg"]};color:{c["fg"]};'
-            f'font-family:{t["body"]};font-weight:{t.get("body_weight", 400)};display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative">{texture(t)}{hdr}{body}{ftr}{seal}</div>{OVERFLOW_JS.replace("__DISPLAY__", t["display"].split(",")[0].strip(" '"))}</body></html>')
+            f'font-family:{t["body"]};font-weight:{t.get("body_weight", 400)};display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative">{texture(t)}{hdr}{body}{ftr}{seal}</div>{overflow_js}</body></html>')
 
 
 def dom_flags(chrome, path, timeout=40):
@@ -676,6 +809,71 @@ def dom_flags(chrome, path, timeout=40):
     ov = re.search(r'data-overflow="(\w+)"', out or "")
     fo = re.search(r'data-fonts="(\w+)"', out or "")
     return (ov.group(1) if ov else "unknown"), (fo.group(1) if fo else "unknown")
+
+
+def make_text_pdf(chrome, html_paths, out_dir, deck, timeout=180):
+    """A PDF printed from the pages themselves: selectable, searchable text and clickable links."""
+    import signal, tempfile, shutil
+    sections, head = [], ""
+    # one pre-rendered grain image per page instead of live SVG noise, which prints as huge rasters
+    grain = os.path.abspath(os.path.join(out_dir, "grain.jpg"))
+    if html_paths and not os.path.exists(grain):
+        doc0 = open(html_paths[0], encoding="utf-8").read()
+        layers = "".join(re.findall(r'<div class="tx"[^>]*?style="[^"]*"></div>', doc0))
+        bg = re.search(r'id="frame" style="[^"]*background:([^;"]+)', doc0)
+        gh = os.path.abspath(os.path.join(out_dir, "grain.html"))
+        open(gh, "w").write(f'<!doctype html><html><body style="margin:0"><div style="position:relative;width:1080px;height:1350px;overflow:hidden;background:{bg.group(1) if bg else "#1F4D53"}">{layers}</div></body></html>')
+        gp = grain[:-4] + ".png"
+        if capture.screenshot(chrome, "file://" + gh, gp, 1080, 1350, 60, 4000) == "ok":
+            subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "78", gp, "--out", grain], capture_output=True)
+    for hp in html_paths:
+        doc = open(hp, encoding="utf-8").read()
+        if os.path.exists(grain):
+            doc = re.sub(r'<div class="tx"[^>]*?style="[^"]*"></div>', "", doc)
+            doc = re.sub(r'(<div id="frame" style="[^"]*">)', lambda m: m.group(1) + f'<img class="grain" src="file://{grain}" style="position:absolute;inset:0;width:1080px;height:1350px;z-index:0">', doc, count=1)
+        doc = re.sub(r'filter:[^;"]*;?', "", doc).replace('filter="url(#rough)"', "")  # CSS filters print as full-page rasters
+
+        def jpeg(m):  # big PNG screenshots go in as JPEG
+            src = m.group(1)
+            if not src.lower().endswith(".png") or not os.path.exists(src):
+                return m.group(0)
+            dst = os.path.abspath(os.path.join(out_dir, "print-" + hashlib.sha1(src.encode()).hexdigest()[:10] + ".jpg"))
+            if not os.path.exists(dst):
+                subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "80", "-Z", "1600", src, "--out", dst], capture_output=True)
+            return f'src="file://{dst}"' if os.path.exists(dst) else m.group(0)
+        doc = re.sub(r'src="file://([^"]+)"', jpeg, doc)
+        doc = doc.replace("#frame>*:not(.tx)", "#frame>*:not(.tx):not(.grain)")
+        if "text-shadow" in doc:  # stacked shadows print as extra copies of the words, so they go in as one transparent picture
+            sp = os.path.abspath(os.path.join(out_dir, "shadow-" + os.path.basename(hp)[:-5] + ".png"))
+            sd = os.path.abspath(os.path.join(out_dir, "shadow.html"))
+            hide = ("<style>html,body,#frame{background:transparent!important}#frame *{color:transparent!important;background:transparent!important;"
+                    "border-color:transparent!important;box-shadow:none!important;-webkit-text-stroke:0!important}"
+                    "#frame img,#frame svg,#frame .tx{visibility:hidden!important}</style>")
+            open(sd, "w", encoding="utf-8").write(doc.replace("</head>", hide + "</head>", 1))
+            if capture.screenshot(chrome, "file://" + sd, sp, 1080, 1350, 60, 4000, ["--default-background-color=00000000"]) == "ok":
+                doc = re.sub(r'text-shadow:[^;"]*;?', "", doc)
+                doc = re.sub(r'(<div id="frame" style="[^"]*">(?:<img class="grain"[^>]*>)?)', lambda m: m.group(1) + f'<img class="grain" src="file://{sp}" style="position:absolute;inset:0;width:1080px;height:1350px;z-index:0">', doc, count=1)
+        if not head:
+            m = re.search(r"<head>(.*?)</head>", doc, re.S)
+            head = re.sub(r"<title>.*?</title>", "", m.group(1), flags=re.S) if m else ""
+        body = re.search(r"<body>(.*)</body>", doc, re.S).group(1)
+        body = re.sub(r"<script.*?</script>", "", body, flags=re.S)
+        sections.append(f'<section style="width:1080px;height:1350px;break-after:page;overflow:hidden;position:relative">{body}</section>')
+    ed = os.path.abspath(os.path.join(out_dir, "edition-text.html"))
+    open(ed, "w").write(f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{html.escape(deck.get("brand", ""))} {html.escape(deck.get("date", ""))}</title>{head}'
+                        '<style>@page{size:1080px 1350px;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}section:last-child{break-after:auto}</style></head><body>'
+                        + "".join(sections) + "</body></html>")
+    pdf = os.path.join(out_dir, "edition.pdf")
+    prof = tempfile.mkdtemp(prefix="scout-chrome-")
+    proc = subprocess.Popen([chrome, "--headless=new", "--disable-gpu", f"--user-data-dir={prof}", "--no-pdf-header-footer",
+                             "--virtual-time-budget=9000", f"--print-to-pdf={pdf}", "file://" + ed],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+    shutil.rmtree(prof, ignore_errors=True)
+    return pdf if os.path.exists(pdf) else None
 
 
 def make_pdf(chrome, png_paths, out_dir, deck, timeout=120):
@@ -748,7 +946,10 @@ def main():
             row["png"], row["overflow"], row["fonts"] = None, "unchecked", "unchecked"
         report.append(row)
         print(f"{name:<22} png={'ok' if row['png'] else 'no'} overflow={row['overflow']} fonts={row['fonts']}")
-    pdf = make_pdf(chrome, [r["png"] for r in report if r.get("png")], a.out_dir, deck) if chrome else None
+    if chrome and deck.get("pdf") == "text":
+        pdf = make_text_pdf(chrome, [r["html"] for r in report], a.out_dir, deck)
+    else:
+        pdf = make_pdf(chrome, [r["png"] for r in report if r.get("png")], a.out_dir, deck) if chrome else None
     print(f"edition.pdf {'ok' if pdf else 'not made'}")
     json.dump({"slides": report, "pdf": pdf, "radar_gate": audit.get("radar_gate"), "browser": chrome},
               open(os.path.join(a.out_dir, "render.json"), "w"), indent=1)

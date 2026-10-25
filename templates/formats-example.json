@@ -1,0 +1,12 @@
+[
+  {
+    "_note": "Pattern only. The creator counts here are example numbers: replace them with distinct creators counted from your own saved captures, per platform per week.",
+    "name": "One move per video, gamified in levels, same character, same cover",
+    "example": {"url": "https://www.instagram.com/kynarolab/", "creator": "@kynarolab", "date": "2026-10-05"},
+    "creators": {"tiktok": {"2026-09-28": 0, "2026-10-05": 4, "2026-10-12": 11, "2026-10-19": 38}},
+    "captures": ["evidence/2026-10-23/captures/example-search.png"],
+    "reels_checked": true,
+    "keep": ["one skill move per video", "numbered levels (LEVEL 1, LEVEL 2)", "the same character every time", "the same cover template", "under 20 seconds"],
+    "make_yours": ["the skill (guitar chords, drum fills, a dance step)", "your character and colors", "the level ladder for your skill (C, then C major 7)"]
+  }
+]

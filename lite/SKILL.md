@@ -26,7 +26,7 @@ Ask the person, then keep the answers in this project's memory or the chat:
    - **In or out:** new, rising, fading, gone, each with its number and source.
    - **Pillars:** one short section for each area that moved this week, for example agents, models, creative tools, the person's industry, culture. Skip any area with nothing new.
    - **Try this week:** up to five new tools, with what each does, its launch date and its link. Say plainly that you haven't run them.
-   - **For your content:** four posts people in this niche will share, built only from this week's finds. Make one the lead. Give each a ready first line, the receipt and a platform. A hook that claims a result is only true once the person has done it.
+   - **For your content:** four posts people in this niche will share, built only from this week's finds. Make one the lead. Give each a ready first line, the receipt and a platform. A hook that claims a result is only true once the person has done it. When a post rides a format, add: whether the person is early or late (how many creators posted it this week against last week, from what the searches actually show; if you can't count it, say the stage is unknown), whether it's rising on TikTok but not on Instagram Reels yet (only if you searched Reels), what to keep the same, what to make theirs, and their version beat by beat: opening shot, text on screen, caption. Never say a format will go viral.
    - **What to watch next:** dated things coming up.
 
 ## Rules

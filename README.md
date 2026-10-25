@@ -49,6 +49,7 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 | X this week, no login | `python3 scripts/xpublic.py pull WATCHLIST.json OUT` then `report OUT --history DIR` |
 | New terms and new AI tools nobody told it about | `python3 scripts/terms.py OUT.json` and `python3 scripts/tools.py OUT.json` |
 | In or out: new, rising, peaking, fading, gone | `python3 scripts/trendstate.py signals BASKET SIGNALS_DIR OUT.json` or `x POSTS.jsonl OUT.json` |
+| Formats to steal: early or late, first on Reels, keep and make yours | `python3 scripts/formats.py formats.json formats-state.json` |
 | News-show video and 9:16 cut | `python3 scripts/show.py SHOW.json OUT` |
 | Calls: propose, check novelty, resolve, score | `python3 scripts/calls.py propose|novelty|resolve|score ...` |
 | Benchmark press search | `python3 scripts/benchmark.py OUTLETS.json QUERY.json OUT.json` |

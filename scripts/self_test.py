@@ -206,6 +206,27 @@ def main():
                            "print('{\"allowed\": false, \"reason\": \"Outside window\"}')"]}})
     check("xpass reserve honours a denied gate", denied["allowed"] is False and denied["reason"] == "Outside window", denied)
 
+    import formats  # noqa: E402
+    base = {"name": "one move per video, in levels", "keep": ["one move per video"], "make_yours": ["the skill"],
+            "captures": ["evidence/2026-10-23/captures/x.png"]}
+    weeks = ["2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"]
+    rising = formats.judge(dict(base, creators={"tiktok": dict(zip(weeks, [0, 0, 0, 67, 263]))}, reels_checked=True))
+    check("formats calls a new climb early", rising["verdict"] == "EARLY", rising["verdict"])
+    check("formats flags first on Reels when Reels was checked and quiet", rising["first_on_reels"], rising["reels_note"])
+    unchecked = formats.judge(dict(base, creators={"tiktok": dict(zip(weeks, [0, 0, 0, 67, 263]))}))
+    check("formats never flags Reels it didn't check", not unchecked["first_on_reels"], unchecked["reels_note"])
+    fading = formats.judge(dict(base, creators={"tiktok": dict(zip(weeks, [40, 222, 210, 120, 50]))}))
+    check("formats calls a falling format late", fading["verdict"] == "LATE", fading["verdict"])
+    blind = formats.judge(dict(base, captures=[]))
+    check("formats says unknown without counts", blind["verdict"] == "UNKNOWN", blind["verdict"])
+    for bad, why in ((dict(base, make_yours=[]), "make_yours"), (dict(base, creators={"tiktok": {"2026-10-19": 9}}, captures=[]), "captures")):
+        try:
+            formats.judge(bad)
+            ok = False
+        except ValueError as e:
+            ok = why in str(e)
+        check(f"formats refuses a format without {why}", ok)
+
     print(f"\n{'all checks passed' if not FAILS else str(len(FAILS)) + ' check(s) failed'}")
     sys.exit(1 if FAILS else 0)
 

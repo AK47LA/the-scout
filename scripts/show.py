@@ -166,7 +166,7 @@ def sc_evidence(b, d):
            f'fill="none" stroke="{RED}" stroke-width="8" filter="url(#rough)" stroke-dasharray="{per + 80:.0f}" stroke-dashoffset="{per + 80:.0f}" '
            f'style="animation:draw .8s ease-out {b.get("box_at", .9):.2f}s both"></rect></svg></div>')
     card = (f'<div style="left:72px;top:{b.get("top", 210)}px;z-index:2;{anim("drop", .5, .05)}"><div class="card" style="border:10px solid {PAPER};padding:0">'
-            f'<div style="position:relative;width:{fw}px;height:{fh}px;overflow:hidden;background:#fff">{img}</div></div>'
+            f'<div style="position:relative;width:{fw}px;height:{fh}px;overflow:hidden;background:{b.get("frame_bg", "#fff")}">{img}</div></div>'
             f'<span class="chip" style="position:absolute;right:-10px;top:-26px;font-size:15px;background:{INK};color:{CREAM};border-color:{INK}">{E(b.get("tag", "CAPTURE"))}</span></div>')
     lower = (f'<div style="left:0;top:{b.get("top", 210) + fh + 64}px;z-index:3;{anim("slidein", .45, 1.0)}">'
              f'<div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;padding-left:72px">'
@@ -379,7 +379,7 @@ def voice_line(text, voice, key, cache):
         if key:
             req = urllib.request.Request(
                 f"https://api.elevenlabs.io/v1/text-to-speech/{voice['voice_id']}/with-timestamps?output_format=mp3_44100_128",
-                data=json.dumps({"text": text, "model_id": voice["model_id"]}).encode(),
+                data=json.dumps(dict({"text": text, "model_id": voice["model_id"]}, **({"voice_settings": voice["settings"]} if voice.get("settings") else {}))).encode(),
                 headers={"xi-api-key": key, "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=180) as r:
                 d = json.load(r)
@@ -557,7 +557,7 @@ def main():
         if r["beat"].get("audio") and r["beat"].get("video"):
             ins += ["-ss", str(r["beat"].get("from", 0)), "-t", f'{r["dur"]:.2f}', "-i", r["beat"]["video"]]
             ms = int(r["start"] * 1000)
-            filt.append(f"[{n}:a]aresample=44100,adelay={ms}|{ms},volume={r['beat'].get('audio_volume', 0.32)},afade=t=out:st={max(0, r["dur"] - 0.4):.2f}:d=0.4[c{n}]")
+            filt.append(f"[{n}:a]aresample=44100,adelay={ms}|{ms},volume={r['beat'].get('audio_volume', 0.32)},afade=t=out:st={max(0, r['dur'] - 0.4):.2f}:d=0.4[c{n}]")
             mix.append(f"[c{n}]")
             n += 1
         if whoosh and r["start"] > 0:
