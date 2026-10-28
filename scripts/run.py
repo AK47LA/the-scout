@@ -50,13 +50,14 @@ def main():
     ap.add_argument("--calls", default=d.get("calls"))
     ap.add_argument("--outlets", default=d.get("outlets"))
     ap.add_argument("--discover", action="store_true")
+    ap.add_argument("--headlines", action="store_true", help="read this week's headlines for the niche (Google News plus basket outlets)")
     ap.add_argument("--media", action="store_true")
     ap.add_argument("--weekly", action="store_true", help="Monday run: weekly_out, weekly_slides, pull, calls, discover, media")
     a = ap.parse_args()
     if a.weekly:
         a.out = d.get("weekly_out", a.out)
         a.slides = d.get("weekly_slides", a.slides)
-        a.pull = a.discover = a.media = True
+        a.pull = a.discover = a.media = a.headlines = True
     os.makedirs(a.out, exist_ok=True)
     summary = {"started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "steps": {}}
 
@@ -115,6 +116,15 @@ def main():
             flagged = {src: [n for n, e in s["entities"].items() if e.get("flagged_recent")] for src, s in res["sources"].items()}
             summary["steps"]["signals"] = {"dir": sdir, "flagged_recent": flagged}
             print(f"signals: flagged in the last 8 weeks {flagged}")
+            # In or out: every tracked item's state (new, just trending, rising, peaking, fading, gone) on one rule, every run
+            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "signals", a.signals, sdir,
+                                  os.path.join(a.out, "states-signals.json")])
+            summary["steps"]["states_signals"] = {"exit": rc, "file": os.path.join(a.out, "states-signals.json")}
+
+    # 2b+. This week's headlines for the niche and each tracked name (Google News search plus any outlet feeds; no key)
+    if a.headlines and a.signals:
+        rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "headlines.py"), a.signals, os.path.join(a.out, "headlines.json")])
+        summary["steps"]["headlines"] = {"exit": rc, "file": os.path.join(a.out, "headlines.json")}
 
     # 2c. Calls: resolve against the benchmark press, feed hits into the ledger
     if a.calls and a.outlets and os.path.exists(a.calls):
@@ -138,30 +148,21 @@ def main():
         if path and os.path.exists(path):
             extra.append(f"{name}={path}")
 
-    # 2d. Discovery leads for the analyst
+    # 2d. X, every run, no login: the watchlist's public posts, ranked and compared with earlier weeks
+    if d.get("x_watchlist"):
+        xo = d.get("x_public_dir") or os.path.join(a.out, "x")
+        rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "pull", d["x_watchlist"], xo])
+        rc2 = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "report", xo, "--hours", "168"]
+                              + (["--history", d["x_history"]] if d.get("x_history") else []))
+        summary["steps"]["x_public"] = {"exit": max(rc, rc2), "file": os.path.join(xo, "report.json")}
+        rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "x", os.path.join(xo, "posts.jsonl"),
+                              os.path.join(a.out, "states-x.json")])
+        summary["steps"]["states_x"] = {"exit": rc, "file": os.path.join(a.out, "states-x.json")}
+
+    # 2d+. Discovery leads for the analyst (an agent's fuller edition; slow, so only with --discover)
     if a.discover:
         rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "discover.py"), os.path.join(a.out, "discovery.json")])
         summary["steps"]["discovery"] = {"exit": rc, "file": os.path.join(a.out, "discovery.json")}
-        # X, every week, no login: the watchlist's public posts, ranked and compared with earlier weeks
-        if d.get("x_watchlist"):
-            xo = d.get("x_public_dir") or os.path.join(a.out, "x")
-            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "pull", d["x_watchlist"], xo])
-            rc2 = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "report", xo, "--hours", "168"]
-                                  + (["--history", d["x_history"]] if d.get("x_history") else []))
-            summary["steps"]["x_public"] = {"exit": max(rc, rc2), "file": os.path.join(xo, "report.json")}
-            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "x", os.path.join(xo, "posts.jsonl"),
-                                  os.path.join(a.out, "states-x.json")])
-            summary["steps"]["states_x"] = {"exit": rc, "file": os.path.join(a.out, "states-x.json")}
-            if d.get("x_keywords"):  # next week's searches follow what is trending now
-                rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xkeywords.py"), "update", d["x_keywords"],
-                                      "--states", os.path.join(a.out, "states-x.json"), "--terms", os.path.join(a.out, "terms.json"),
-                                      "--posts", os.path.join(xo, "posts.jsonl")])
-                summary["steps"]["x_keywords"] = {"exit": rc, "file": d["x_keywords"]}
-        # In or out: every tracked item's state (new, just trending, rising, peaking, fading, gone) on one rule
-        if a.signals and os.path.isdir(os.path.join(a.out, "signals")):
-            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "signals", a.signals, os.path.join(a.out, "signals"),
-                                  os.path.join(a.out, "states-signals.json")])
-            summary["steps"]["states_signals"] = {"exit": rc, "file": os.path.join(a.out, "states-signals.json")}
         # New words people started using, and new AI tools people picked up: found, not supplied
         cmd = [sys.executable, "-I", os.path.join(HERE, "terms.py"), os.path.join(a.out, "terms.json")]
         if d.get("terms_bluesky"):
@@ -177,6 +178,32 @@ def main():
             cmd += ["--priority", d["tool_lanes"]]
         rc = subprocess.call(cmd)
         summary["steps"]["tools"] = {"exit": rc, "file": os.path.join(a.out, "tools.json")}
+        if d.get("x_watchlist") and d.get("x_keywords"):  # next week's searches follow what is trending now
+            xo = d.get("x_public_dir") or os.path.join(a.out, "x")
+            rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xkeywords.py"), "update", d["x_keywords"],
+                                  "--states", os.path.join(a.out, "states-x.json"), "--terms", os.path.join(a.out, "terms.json"),
+                                  "--posts", os.path.join(xo, "posts.jsonl")])
+            summary["steps"]["x_keywords"] = {"exit": rc, "file": d["x_keywords"]}
+
+    # 2e. The week in one place: in and out, the move, four posts, the press (from this run's measured files only)
+    if a.signals or a.headlines:
+        xo = d.get("x_public_dir") or os.path.join(a.out, "x")
+        cmd = [sys.executable, "-I", os.path.join(HERE, "brief.py"), os.path.join(a.out, "brief.json")]
+        for name, flag in (("states-signals.json", "--states"), ("states-x.json", "--states"), ("headlines.json", "--headlines")):
+            if os.path.exists(os.path.join(a.out, name)):
+                cmd += [flag, os.path.join(a.out, name)]
+        if d.get("x_watchlist") and os.path.exists(os.path.join(xo, "report.json")):
+            cmd += ["--x-report", os.path.join(xo, "report.json"), "--watchlist", d["x_watchlist"]]
+            hist = d.get("x_history") or os.path.dirname(xo)
+            pulls = {datetime.date.fromisoformat(n).isocalendar()[:2] for n in (os.listdir(hist) if os.path.isdir(hist) else [])
+                     if len(n) == 10 and n[4] == "-" and os.path.exists(os.path.join(hist, n, "posts.jsonl"))}
+            cmd += ["--x-weeks", str(len(pulls))]
+        if a.signals:
+            cmd += ["--basket", a.signals]
+        rc = subprocess.call(cmd)
+        summary["steps"]["brief"] = {"exit": rc, "file": os.path.join(a.out, "brief.json")}
+        if rc == 0:
+            extra.append(f"brief={os.path.join(a.out, 'brief.json')}")
 
     # 3. Evidence capture
     caps_path = None

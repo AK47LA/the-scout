@@ -55,6 +55,9 @@ def complete_weeks(weekly, today=None):
     return [(w, v) for w, v in sorted(weekly.items()) if w < this_monday]
 
 
+SATURATED = []  # (name, source) pairs whose recent weeks sit at a source's reporting ceiling, so no state is called
+
+
 def from_signals(pairs):
     rows, seen = [], set()
     for basket_p, out_dir in pairs:
@@ -68,6 +71,11 @@ def from_signals(pairs):
                 except Exception:
                     continue
                 weeks = complete_weeks(weekly or {})[-52:]
+                capped = set(signals.capped_weeks(src, dict(weeks)))
+                if capped & {w for w, _ in weeks[-6:]}:  # too big for this source to count: say so instead of calling a state
+                    SATURATED.append({"name": ent["name"], "source": src, "cap": signals.BLUESKY_CAP,
+                                      "note": f"{src} reports at most {signals.BLUESKY_CAP:,} a week, and recent weeks hit that ceiling"})
+                    continue
                 r = classify(weeks, minimum=signals.DEFAULT_MIN.get(src, 1))
                 if r and (ent["name"].lower(), src) not in seen:
                     seen.add((ent["name"].lower(), src))
@@ -132,7 +140,7 @@ def main():
         sys.exit(__doc__)
     rows.sort(key=lambda r: (ORDER[r["state"]], -(r.get("vs_prior4_pct") or 0)))
     json.dump({"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), "rule": __doc__.split("States,")[1].split("For X")[0].strip(),
-               "rows": rows}, open(out, "w"), indent=1, ensure_ascii=False)
+               "rows": rows, "saturated": SATURATED}, open(out, "w"), indent=1, ensure_ascii=False)
     for r in rows:
         print(f"  {r['state']:<14} {r['name'][:32]:<32} {r['source']:<11} now {r['value']:>10} prior4 {r['prior4_mean']:>10} peak% {r['pct_of_peak']}")
 

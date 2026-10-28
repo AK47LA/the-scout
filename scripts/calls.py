@@ -53,7 +53,7 @@ def validate(rows):
 
 
 def bound(p):
-    """A plain slug matches whole slug words only: "jev" must not match "sarajevo"."""
+    """A plain slug matches whole slug words only: "arc" must not match "search"."""
     import re as _re
     return f"(^|[/-]){_re.escape(p)}s?($|[/-])" if _re.fullmatch(r"[a-z0-9-]+", p) else p
 

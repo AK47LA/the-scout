@@ -1,7 +1,7 @@
 """The Scout, guided. Plain questions in, a finished edition out.
 
   python3 scripts/scout.py setup                      asks your niche, what to watch and your name, then makes the edition
-  python3 scripts/scout.py setup --niche "K-pop" --names "NewJeans, ILLIT, KATSEYE" --mark "Sam" --yes
+  python3 scripts/scout.py setup --niche "K-pop" --names "NewJeans, ILLIT, KATSEYE" --mark "Sam" --x "@hybe_labels" --yes
   python3 scripts/scout.py starter music              start from a ready niche (music, marketing, games, ai-tools)
   python3 scripts/scout.py run [FOLDER]               refresh an edition (the most recent one if no folder)
   python3 scripts/scout.py list                       show your editions
@@ -116,35 +116,99 @@ def build_basket(niche, names, interactive):
             "made_at": datetime.date.today().isoformat()}
 
 
-def build_edition(niche, mark, basket):
-    ed = json.load(open(os.path.join(ROOT, "templates", "starter-edition.json")))
+WEEK_SLIDES = ("states", "move", "posts", "press")  # the pages every edition carries since the 28 Oct 2026 update
+X_STAMP = {"value": "{{brief.counts.x_posts|thousands}}", "label": "X POSTS", "icon": "eye"}
+
+
+def template():
+    return json.load(open(os.path.join(ROOT, "templates", "starter-edition.json")))
+
+
+def build_edition(niche, mark, basket, has_x=False):
+    ed = template()
     ed["series"] = niche.upper()[:28]
     ed["mark"] = (mark or "").upper()[:24]
     ed["date"] = datetime.date.today().strftime("%d %b %Y").upper()
     cover = ed["slides"][0]
-    cover["headline"] = f"{niche}, with history."
-    cover["voiceover"] = f"This is The Scout for {niche}: behaviour data with history, flagged by one fixed rule."
+    cover["headline"] = f"{niche}, this week."
     cover["source"] = "Made with The Scout"
+    if has_x:
+        cover["stamps_row"].append(dict(X_STAMP))
     has = {src for e in basket["entities"] for src in e}
     if "hackernews" in has:
-        ed["slides"].insert(3, {"id": "hackernews", "kind": "signal_board", "signal_source": "hackernews", "eyebrow": "BUILDERS",
-                                "headline": "What builders are posting.", "note": "Weekly Hacker News stories naming each, last 52 weeks.",
-                                "untraced_ok": [{"value": "52", "reason": "chart window length"}],
-                                "voiceover": "And what builders are posting about on Hacker News.", "source": "Source: Hacker News via Algolia"})
+        at = next(i for i, s in enumerate(ed["slides"]) if s.get("id") == "bluesky") + 1
+        ed["slides"].insert(at, {"id": "hackernews", "kind": "signal_board", "signal_source": "hackernews", "eyebrow": "BUILDERS",
+                                 "headline": "What builders are posting.", "note": "Weekly Hacker News stories naming each, last 52 weeks.",
+                                 "untraced_ok": [{"value": "52", "reason": "chart window length"}],
+                                 "voiceover": "And what builders are posting about on Hacker News.", "source": "Source: Hacker News via Algolia"})
     return ed
+
+
+def refresh_edition(path, has_x):
+    """Every run: today's date on every page, and older editions get the weekly pages (in or out, the move, posts, press)."""
+    ed = json.load(open(path))
+    ed["date"] = datetime.date.today().strftime("%d %b %Y").upper()
+    have = {s.get("kind") for s in ed.get("slides", [])}
+    new = [s for s in template()["slides"] if s.get("kind") in WEEK_SLIDES and s.get("kind") not in have]
+    if new:
+        at = 1 if ed["slides"] and ed["slides"][0].get("kind") == "cover" else 0
+        ed["slides"][at:at] = new
+    cover = ed["slides"][0] if ed["slides"] and ed["slides"][0].get("kind") == "cover" else None
+    if cover is not None and not cover.get("stamps_row"):
+        cover["stamps_row"] = template()["slides"][0]["stamps_row"]
+        cover["voiceover"] = "{{brief.voice.cover}}"
+    if cover is not None and has_x and not any("x_posts" in (it.get("value") or "") for it in cover.get("stamps_row", [])):
+        cover["stamps_row"].append(dict(X_STAMP))
+    json.dump(ed, open(path, "w"), ensure_ascii=False, indent=1)
+
+
+def x_posts_api(handle):
+    """An account's newest public posts, read without a login (the same route xpublic.py uses), or None."""
+    try:
+        d, _ = signals.get_json(f"https://api.fxtwitter.com/2/profile/{urllib.parse.quote(handle)}/statuses", retries=1)
+    except Exception:
+        return None
+    return (d or {}).get("results") or None
+
+
+def build_watchlist(niche, handles, interactive):
+    """X accounts the reader names, each read once to confirm it exists and to show its name before it's kept."""
+    accounts, today = [], datetime.date.today().isoformat()
+    for raw in handles:
+        h = raw.strip().lstrip("@").split("/")[-1]
+        if not re.fullmatch(r"[A-Za-z0-9_]{1,15}", h):
+            say(f"  {raw}: not an X handle, skipped")
+            continue
+        posts = x_posts_api(h)
+        if not posts:
+            say(f"  @{h}: couldn't read any public posts, skipped (check the spelling)")
+            continue
+        a = posts[0].get("author") or {}
+        name, followers = a.get("name") or h, a.get("followers")
+        desc = f"{name}" + (f", {followers:,} followers" if isinstance(followers, int) else "")
+        if interactive and ask(f"  @{a.get('screen_name') or h}: {desc}. Keep it? (Y/n)", "y").lower().startswith("n"):
+            continue
+        say(f"  @{a.get('screen_name') or h}: {desc}")
+        accounts.append({"handle": a.get("screen_name") or h, "lane": "watchlist", "name": name,
+                         "verified": f"public posts read on {today}; shown to the owner as {desc}"})
+    return {"niche": niche, "updated": today, "rule": "Add a handle only after reading its profile and matching the name; never guess one.",
+            "why": "xpublic.py reads these accounts' public posts every run without a login.", "accounts": accounts}
 
 
 def run(folder, media=True):
     basket, edition = os.path.join(folder, "basket.json"), os.path.join(folder, "edition.json")
     if not (os.path.exists(basket) and os.path.exists(edition)):
         sys.exit(f"{folder} has no basket.json and edition.json; run setup first")
-    say("\nPulling public data with history. The first run takes a few minutes; later runs reuse what's saved.")
+    say("\nPulling public data with history. The first run takes a few minutes; later runs add only the newest weeks.")
     config = os.path.join(folder, "none.json")
-    if os.path.exists(os.path.join(folder, "x-watchlist.json")):  # X every week, no login: the niche's watchlist, read and compared week to week
+    wl = os.path.join(folder, "x-watchlist.json")
+    has_x = os.path.exists(wl) and bool(json.load(open(wl)).get("accounts"))
+    if has_x:  # X every week, no login: the niche's watchlist, read and compared week to week
         config = os.path.join(folder, "scout-config.json")
         json.dump({"root": folder, "x_watchlist": "x-watchlist.json", "x_public_dir": "x/{date}", "x_history": "x"}, open(config, "w"), indent=1)
+    refresh_edition(edition, has_x)
     cmd = [sys.executable, "-I", os.path.join(HERE, "run.py"), "--config", config, "--out", folder,
-           "--signals", basket, "--pull", "--slides", edition] + (["--discover"] if config.endswith("scout-config.json") else [])
+           "--signals", basket, "--pull", "--headlines", "--slides", edition]
     if media and shutil.which("ffmpeg"):
         cmd.append("--media")
     elif media:
@@ -181,6 +245,7 @@ def main():
     s.add_argument("--niche")
     s.add_argument("--names", help="comma-separated: artists, products, tools, shows, or owner/repo")
     s.add_argument("--mark", help="your name or brand for the footer")
+    s.add_argument("--x", help="optional, comma-separated X handles to read each week (each is checked before it's kept)")
     s.add_argument("--yes", action="store_true", help="accept the best match for every name without asking")
     s.add_argument("--no-media", action="store_true")
     st = sub.add_parser("starter")
@@ -201,12 +266,23 @@ def main():
         items = [x.strip() for x in names.split(",") if x.strip()][:12]
         if len(items) < 1:
             sys.exit("Add at least one thing to watch.")
+        x_raw = a.x if getattr(a, "x", None) is not None else ("" if getattr(a, "yes", False) else ask(
+            "Optional: up to 20 X accounts that cover your niche, so The Scout reads their public posts each week "
+            "(for example @billboard, @pitchfork). Separate them with commas, or press Return to skip", ""))
         say("\nFinding each one on Wikipedia so the history is right:")
         basket = build_basket(niche, items, interactive=not getattr(a, "yes", False))
         folder = os.path.join(HOME, slugify(niche))
         os.makedirs(folder, exist_ok=True)
         json.dump(basket, open(os.path.join(folder, "basket.json"), "w"), indent=1)
-        json.dump(build_edition(niche, mark, basket), open(os.path.join(folder, "edition.json"), "w"), ensure_ascii=False, indent=1)
+        handles = [x.strip() for x in x_raw.split(",") if x.strip()][:20]
+        has_x = False
+        if handles:
+            say("\nChecking each X account by reading its public posts:")
+            wl = build_watchlist(niche, handles, interactive=not getattr(a, "yes", False))
+            if wl["accounts"]:
+                json.dump(wl, open(os.path.join(folder, "x-watchlist.json"), "w"), indent=1, ensure_ascii=False)
+                has_x = True
+        json.dump(build_edition(niche, mark, basket, has_x), open(os.path.join(folder, "edition.json"), "w"), ensure_ascii=False, indent=1)
         say(f"\nSaved your setup in {folder}")
         sys.exit(run(folder, media=not getattr(a, "no_media", False)))
     if a.cmd == "starter":

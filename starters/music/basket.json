@@ -62,5 +62,47 @@
    "github": 100
   }
  },
- "made_at": "2026-10-22"
+ "made_at": "2026-10-22",
+ "outlets": [
+  {
+   "name": "Billboard",
+   "rss": "https://www.billboard.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Music Business Worldwide",
+   "rss": "https://www.musicbusinessworldwide.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Pitchfork",
+   "rss": "https://pitchfork.com/feed/feed-news/rss",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Rolling Stone",
+   "rss": "https://www.rollingstone.com/music/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Variety",
+   "rss": "https://variety.com/v/music/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Digital Music News",
+   "rss": "https://www.digitalmusicnews.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Stereogum",
+   "rss": "https://www.stereogum.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "NME",
+   "rss": "https://www.nme.com/feed",
+   "checked": "2026-10-28"
+  }
+ ]
 }

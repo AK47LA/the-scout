@@ -84,5 +84,27 @@
    "github": 100
   }
  },
- "made_at": "2026-10-23"
+ "made_at": "2026-10-23",
+ "outlets": [
+  {
+   "name": "Adweek",
+   "rss": "https://www.adweek.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Digiday",
+   "rss": "https://digiday.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Social Media Today",
+   "rss": "https://www.socialmediatoday.com/feeds/news/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Marketing Dive",
+   "rss": "https://www.marketingdive.com/feeds/news/",
+   "checked": "2026-10-28"
+  }
+ ]
 }

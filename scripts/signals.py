@@ -108,7 +108,18 @@ def f_bluesky(q, start, end):
         d, _ = get_json(url)
         weekly[m.isoformat()] = d.get("hitsTotal", len(d.get("posts", [])))
         time.sleep(0.12)
-    return {"weekly": weekly, "note": "hitsTotal from Bluesky search; history before early 2023 does not exist."}
+    return {"weekly": weekly, "note": "hitsTotal from Bluesky search; history before early 2023 does not exist. "
+                                      f"Search counts stop at {BLUESKY_CAP:,} a week, so a week at that number is a floor, not a count."}
+
+
+BLUESKY_CAP = 10000  # Bluesky search reports at most this many hits per query; weeks at the cap can't be compared
+
+
+def capped_weeks(src, weekly):
+    """Weeks whose count hit a source's reporting ceiling (Bluesky search stops at 10,000)."""
+    if src != "bluesky" or not weekly:
+        return []
+    return sorted(w for w, v in weekly.items() if v >= BLUESKY_CAP)
 
 
 def f_github(repo, start, end):
@@ -278,13 +289,23 @@ def pull(basket, out_dir, refresh=False, workers=8):
     def one(t):
         group, ent, src, fn, q, path = t
         rec = {"group": group, "entity": ent["name"], "source": src, "query": q, "file": path}
+        old, since = None, start
         if os.path.exists(path) and not refresh:
-            rec["outcome"] = "cached"
-            return rec
+            try:
+                old = json.load(open(path))
+            except Exception:
+                old = None
+            fetched = (old or {}).get("fetched_at", "")[:10]
+            fresh = fetched and (datetime.date.today() - datetime.date.fromisoformat(fetched)).days < 6
+            if fresh or src not in BACKFILLED or not (old or {}).get("weekly"):
+                rec["outcome"] = "cached"
+                return rec
+            # a week or more old: fetch only the recent weeks (the last three again, in case they were partial) and merge
+            since = max(start, datetime.date.fromisoformat(max(old["weekly"])) - datetime.timedelta(days=21))
         with gates[src]:
             try:
                 qs = q if isinstance(q, list) else [q]  # aliases are summed, e.g. a product renamed twice
-                parts = [fn(x, start, end) for x in qs]
+                parts = [fn(x, since, end) for x in qs]
                 data = parts[0]
                 if len(parts) > 1 and all("weekly" in p for p in parts):
                     merged = {}
@@ -292,7 +313,10 @@ def pull(basket, out_dir, refresh=False, workers=8):
                         for w, v in p["weekly"].items():
                             merged[w] = merged.get(w, 0) + v
                     data = dict(parts[0], weekly=merged, aliases=qs)
-                rec["outcome"] = "skipped" if "skipped" in data else "ok"
+                if old and "weekly" in data:  # weekly refresh: keep the saved history, replace the recent weeks
+                    data = dict(data, weekly=dict(old["weekly"], **data["weekly"]))
+                    rec["refreshed_from"] = since.isoformat()
+                rec["outcome"] = "skipped" if "skipped" in data else ("updated" if old else "ok")
                 if "skipped" in data:
                     rec["reason"] = data["skipped"]
                 else:

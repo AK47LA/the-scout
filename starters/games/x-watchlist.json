@@ -1,9 +1,63 @@
 {
  "niche": "Games",
- "updated": "2026-10-23",
+ "updated": "2026-10-28",
  "rule": "Add a handle only after reading its profile and matching the name; never guess one.",
  "why": "X is where news in this niche breaks first. xpublic.py reads these accounts' public posts every week without a login.",
  "accounts": [
+  {
+   "handle": "VGC_News",
+   "lane": "games",
+   "name": "VGC",
+   "verified": "public posts read on 2026-10-28; VGC, 421,867 followers"
+  },
+  {
+   "handle": "eurogamer",
+   "lane": "games",
+   "name": "Eurogamer",
+   "verified": "public posts read on 2026-10-28; Eurogamer, 684,706 followers"
+  },
+  {
+   "handle": "gamedevdotcom",
+   "lane": "games",
+   "name": "Game Developer",
+   "verified": "public posts read on 2026-10-28; Game Developer, 432,554 followers"
+  },
+  {
+   "handle": "Steam",
+   "lane": "games",
+   "name": "Steam",
+   "verified": "public posts read on 2026-10-28; Steam, 8,749,438 followers"
+  },
+  {
+   "handle": "PlayStation",
+   "lane": "games",
+   "name": "PlayStation",
+   "verified": "public posts read on 2026-10-28; PlayStation, 44,521,932 followers"
+  },
+  {
+   "handle": "geoffkeighley",
+   "lane": "games",
+   "name": "Geoff Keighley",
+   "verified": "public posts read on 2026-10-28; Geoff Keighley, 4,042,910 followers"
+  },
+  {
+   "handle": "thegameawards",
+   "lane": "games",
+   "name": "The Game Awards",
+   "verified": "public posts read on 2026-10-28; The Game Awards, 1,564,146 followers"
+  },
+  {
+   "handle": "Kotaku",
+   "lane": "games",
+   "name": "Kotaku",
+   "verified": "public posts read on 2026-10-28; Kotaku, 2,397,874 followers"
+  },
+  {
+   "handle": "Polygon",
+   "lane": "games",
+   "name": "Polygon",
+   "verified": "public posts read on 2026-10-28; Polygon, 1,288,773 followers"
+  },
   {
    "handle": "PopCrave",
    "lane": "entertainment-and-culture",

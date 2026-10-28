@@ -1,19 +1,78 @@
 {
  "brand": "THE SCOUT",
  "series": "MUSIC",
- "date": "22 OCT 2026",
+ "date": "THIS WEEK",
  "mark": "",
  "theme": "kaiju",
  "slides": [
   {
    "id": "cover",
    "kind": "cover",
-   "tag": "FIRST RUN",
-   "headline_size": 120,
-   "headline": "Music, with history.",
-   "sub": "Behaviour data from public sources, flagged by one fixed rule.",
-   "voiceover": "This is The Scout for Music: behaviour data with history, flagged by one fixed rule.",
+   "tag": "THIS WEEK",
+   "headline_size": 112,
+   "headline": "Music, this week.",
+   "sub": "What came in, what went out, the move, and four posts to make. Every number from public data.",
+   "stamps_row": [
+    {
+     "value": "{{brief.counts.headlines|thousands}}",
+     "label": "HEADLINES",
+     "icon": "eye"
+    },
+    {
+     "value": "{{brief.counts.outlets|thousands}}",
+     "label": "OUTLETS",
+     "icon": "lens"
+    },
+    {
+     "value": "{{brief.counts.x_posts|thousands}}",
+     "label": "X POSTS",
+     "icon": "eye"
+    }
+   ],
+   "voiceover": "{{brief.voice.cover}}",
    "source": "Made with The Scout"
+  },
+  {
+   "id": "states",
+   "kind": "states",
+   "context": "states",
+   "eyebrow": "IN OR OUT",
+   "headline": "What came in. What went out.",
+   "voiceover": "{{brief.voice.states}}",
+   "source": "Source: Wikipedia, Bluesky and X, each against its own past year"
+  },
+  {
+   "id": "move",
+   "kind": "move",
+   "context": "states",
+   "eyebrow": "THE MOVE",
+   "headline": "If you only do one thing this week.",
+   "voiceover": "{{brief.voice.move}}",
+   "source": "Source: the numbers on the previous page"
+  },
+  {
+   "id": "posts",
+   "kind": "posts",
+   "context": "states",
+   "eyebrow": "FOR YOUR CONTENT",
+   "headline": "Four posts to make.",
+   "voiceover": "{{brief.voice.posts}}",
+   "source": "Source: this edition's receipts"
+  },
+  {
+   "id": "press",
+   "kind": "press",
+   "context": "states",
+   "eyebrow": "THE PRESS",
+   "headline": "What the press wrote this week.",
+   "voiceover": "{{brief.voice.press}}",
+   "source": "Source: Google News search and your outlet feeds, last 7 days",
+   "untraced_ok": [
+    {
+     "value": "7",
+     "reason": "headline window length in days"
+    }
+   ]
   },
   {
    "id": "wikipedia",
@@ -22,7 +81,7 @@
    "eyebrow": "ATTENTION",
    "headline": "Who people are reading about.",
    "note": "Weekly Wikipedia views, last 52 weeks. Red bars: the last 8 weeks of a name the rule flagged.",
-   "voiceover": "First, attention: weekly Wikipedia views for each name, with a year of history behind them.",
+   "voiceover": "Attention: weekly Wikipedia views for each name, with a year of history behind them.",
    "source": "Source: Wikimedia pageviews API, agent=user",
    "untraced_ok": [
     {
@@ -41,8 +100,8 @@
    "signal_source": "bluesky",
    "eyebrow": "CONVERSATION",
    "headline": "Who people are posting about.",
-   "note": "Weekly Bluesky posts matching each search, last 52 weeks.",
-   "voiceover": "Then conversation: weekly posts on Bluesky for the same names.",
+   "note": "Weekly Bluesky posts matching each search, last 52 weeks. Bluesky search counts stop at 10,000 a week.",
+   "voiceover": "Conversation: weekly posts on Bluesky for the same names.",
    "source": "Source: Bluesky public search",
    "untraced_ok": [
     {
@@ -52,6 +111,10 @@
     {
      "value": "8",
      "reason": "recent-weeks highlight length"
+    },
+    {
+     "value": "10,000",
+     "reason": "Bluesky search reporting ceiling"
     }
    ]
   },

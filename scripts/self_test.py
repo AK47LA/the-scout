@@ -227,8 +227,103 @@ def main():
             ok = why in str(e)
         check(f"formats refuses a format without {why}", ok)
 
+    weekly_pages(tmp, F, data)
     print(f"\n{'all checks passed' if not FAILS else str(len(FAILS)) + ' check(s) failed'}")
     sys.exit(1 if FAILS else 0)
+
+
+def weekly_pages(tmp, F, data):
+    """The weekly pages added 28 Oct 2026: headlines, in or out, the move, four posts, the press, and the refresh rules."""
+    import datetime as dt
+    import brief, headlines, scout, signals, trendstate, zipfile  # noqa: E401
+    now = dt.datetime(2026, 10, 28, 12, tzinfo=dt.timezone.utc)
+    gn = (b'<rss><channel><item><title>Katseye sells out arena - Billboard</title><link>https://b.example/1</link>'
+          b'<pubDate>Tue, 27 Oct 2026 10:00:00 GMT</pubDate><source url="https://b.example">Billboard</source></item>'
+          b'<item><title>Katseye sells out arena - Billboard</title><link>https://b.example/2</link><pubDate>Tue, 27 Oct 2026 11:00:00 GMT</pubDate>'
+          b'<source url="https://b.example">Billboard</source></item>'
+          b'<item><title>Old story - Variety</title><link>https://v.example/1</link><pubDate>Mon, 05 Oct 2026 10:00:00 GMT</pubDate>'
+          b'<source url="https://v.example">Variety</source></item></channel></rss>')
+    feed = (b'<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Doechii tour news</title><link href="https://p.example/1"/>'
+            b'<published>2026-10-26T09:00:00Z</published></entry></feed>')
+    hl = headlines.run({"niche": "Music", "entities": [{"name": "Katseye"}, {"name": "Doechii"}],
+                        "outlets": [{"name": "Pitchfork", "rss": "https://p.example/feed"}]}, 7, now,
+                       fetcher=lambda u: feed if "p.example" in u else gn)
+    check("headlines strip the outlet from Google News titles", hl["headlines"][0]["title"] in ("Katseye sells out arena", "Doechii tour news"), hl["headlines"][:1])
+    check("headlines keep one per story and drop old ones", hl["read"] == 2 and hl["outlets"] == 2, (hl["read"], hl["outlets"]))
+    check("headlines count each tracked name", hl["by_name"] == {"Katseye": 1, "Doechii": 1}, hl["by_name"])
+    failing = headlines.run({"niche": "Music", "entities": []}, 7, now, fetcher=lambda u: (_ for _ in ()).throw(OSError("offline")))
+    check("headlines record a failed feed instead of crashing", failing["read"] == 0 and failing["feeds"][0]["outcome"] == "failed")
+
+    wk = ["2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"]
+    rows = [dict(trendstate.classify(list(zip(wk, [1000, 1000, 1100, 1000, 3000])), 500), name="Katseye", source="wikipedia"),
+            dict(trendstate.classify(list(zip(wk, [9000, 4000, 3000, 2600, 2000])), 500), name="Doechii", source="wikipedia"),
+            dict(trendstate.classify([(f"w{k:02d}", v) for k, v in enumerate([30000] + [2000] * 8 + [2050])], 500), name="Flat After Spike", source="wikipedia")]
+    b = brief.build([{"rows": rows, "saturated": [{"name": "Coffee", "source": "bluesky"}]}], hl, None, {"entities": [{}, {}]}, dt.date(2026, 10, 28))
+    check("brief puts a jump in and a fall out", [r["name"] for r in b["came_in"]] == ["Katseye"] and [r["name"] for r in b["went_out"]] == ["Doechii"],
+          (b["came_in"], b["went_out"]))
+    check("brief never calls a flat name gone after one spike", all(r["name"] != "Flat After Spike" for r in b["went_out"]))
+    check("brief move names the jump with its number", b["move"]["name"] == "Katseye" and "%" in b["move"]["why"], b["move"])
+    check("brief gives four posts, each with a receipt", len(b["posts"]) <= 4 and b["posts"] and all(p["receipt"] for p in b["posts"]), b["posts"])
+    check("brief counts headlines for the cover", b["counts"]["headlines"] == 2 and "2 headlines" in b["voice"]["cover"], b["voice"]["cover"])
+    empty = brief.build([], None, None, None, dt.date(2026, 10, 28))
+    check("brief says plainly when nothing moved", empty["move"]["name"] is None and empty["posts"] == [], empty["move"])
+
+    tpl = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates", "starter-edition.json")))
+    gate = {"reason": "No ledger rows yet, so the rule stays closed."}
+    bdata = dict(data, brief=b, radar_gate=gate)
+    probs, _ = copycheck.check(tpl, bdata, False)
+    check("starter edition passes the copy check with a brief", probs == [], probs)
+    probs, _ = copycheck.check(tpl, dict(data, brief=empty, radar_gate=gate), False)
+    check("starter edition passes the copy check when nothing moved", probs == [], probs)
+    for th in (render.THEME, render.KAIJU):
+        ctx = render.Ctx(dict(th), bdata, {}, {"brand": "THE SCOUT", "series": "TEST", "date": "TODAY", "mark": "M"})
+        for kind in ("states", "move", "posts", "press"):
+            s = next(x for x in tpl["slides"] if x["kind"] == kind)
+            h = render.page(s, 2, 8, ctx, ctx.deck)
+            check(f"render builds {kind} ({'poster' if th is render.KAIJU else 'plain'})", '<div id="frame"' in h and "Katseye" in h if kind != "press" else "BILLBOARD" in h)
+        h = render.page(next(x for x in tpl["slides"] if x["kind"] == "states"), 2, 8, render.Ctx(dict(th), dict(data, brief=empty), {}, ctx.deck), ctx.deck)
+        check("render states page explains an empty week", "Nothing on your list jumped" in h)
+
+    sat_dir = os.path.join(tmp, "sat")
+    os.makedirs(os.path.join(sat_dir, "raw", "bluesky"))
+    mon = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
+    big = {(mon - dt.timedelta(weeks=k)).isoformat(): 10000 for k in range(1, 12)}
+    json.dump({"weekly": big}, open(os.path.join(sat_dir, "raw", "bluesky", "coffee.json"), "w"))
+    bp = os.path.join(tmp, "sat-basket.json")
+    json.dump({"entities": [{"name": "Coffee", "bluesky": "coffee"}]}, open(bp, "w"))
+    trendstate.SATURATED.clear()
+    got = trendstate.from_signals([(bp, sat_dir)])
+    check("trendstate won't judge a series stuck at Bluesky's ceiling", got == [] and trendstate.SATURATED and trendstate.SATURATED[0]["name"] == "Coffee")
+
+    rdir = os.path.join(tmp, "refresh")
+    path = os.path.join(rdir, "raw", "wikipedia", "watch.json")
+    os.makedirs(os.path.dirname(path))
+    old = {"weekly": {"2026-09-28": 10, "2026-10-05": 20}, "fetched_at": "2026-10-06T00:00:00+00:00"}
+    json.dump(old, open(path, "w"))
+    seen = []
+    saved = signals.FETCH["wikipedia"]
+    signals.FETCH["wikipedia"] = lambda q, a, b: seen.append(a) or {"weekly": {"2026-10-05": 25, "2026-10-12": 30}}
+    try:
+        signals.pull({"start": "2023-01-02", "end": "2026-10-20", "entities": [{"name": "watch", "wikipedia": "Watch"}]}, rdir, workers=1)
+    finally:
+        signals.FETCH["wikipedia"] = saved
+    merged = json.load(open(path))["weekly"]
+    check("weekly refresh fetches only the recent weeks", seen and seen[0] == dt.date(2026, 9, 14), seen)
+    check("weekly refresh keeps history and replaces recent weeks", merged == {"2026-09-28": 10, "2026-10-05": 25, "2026-10-12": 30}, merged)
+
+    ep = os.path.join(tmp, "old-edition.json")
+    json.dump({"date": "22 OCT 2026", "slides": [{"id": "cover", "kind": "cover", "headline": "Music"}, {"id": "gate", "kind": "quote"}]}, open(ep, "w"))
+    scout.refresh_edition(ep, has_x=True)
+    ed = json.load(open(ep))
+    check("refresh dates the edition today", ed["date"] == dt.date.today().strftime("%d %b %Y").upper(), ed["date"])
+    check("refresh adds the weekly pages to an older edition", [s["kind"] for s in ed["slides"]][:5] == ["cover", "states", "move", "posts", "press"],
+          [s["kind"] for s in ed["slides"]])
+    check("refresh adds the X count to the cover when X is read", any("x_posts" in i["value"] for i in ed["slides"][0]["stamps_row"]))
+
+    lite = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lite")
+    z = zipfile.ZipFile(os.path.join(lite, "scout-lite.zip"))
+    check("Scout Lite ZIP matches lite/SKILL.md", z.namelist() == ["scout-lite/SKILL.md"] and
+          z.read("scout-lite/SKILL.md").decode() == open(os.path.join(lite, "SKILL.md")).read())
 
 
 if __name__ == "__main__":

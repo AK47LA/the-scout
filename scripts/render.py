@@ -532,6 +532,85 @@ def k_signal_board(s, c, ctx):
     return head(s, c, ctx, 76) + f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{rows}</div>' + note
 
 
+STATE_CHIP = {"NEW": "FLAG", "JUST TRENDING": "FLAG", "RISING": "FLAG", "PEAKING": "WATCH", "FADING": "CUT", "GONE": "CUT"}
+
+
+def _brief(ctx):
+    return ctx.data.get("brief") or {}
+
+
+def _empty(c, ctx, text):
+    return f'<p style="margin:0;padding:22px 0;font-size:26px;line-height:1.45;color:{c["muted"]};border-top:1.5px solid {c["rule"]}">{html.escape(text)}</p>'
+
+
+def k_states(s, c, ctx):
+    """In or out: what came in, what is at its high, what went out, each with the number it rests on (brief.py)."""
+    t, b = ctx.t, _brief(ctx)
+    out = head(s, c, ctx, 72)
+    for label, key, empty in (("COMING IN", "came_in", "Nothing on your list jumped against its own history this week."),
+                              ("AT ITS HIGH", "peaking", None), ("GOING OUT", "went_out", "Nothing on your list fell off this week.")):
+        rows = b.get(key) or []
+        if not rows and not empty:
+            continue
+        body = "".join(f'<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:13px 0;border-top:1.5px solid {c["rule"]}">'
+                       f'<div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:27px;font-weight:600;line-height:1.2">{html.escape(r["name"][:40])}</span>'
+                       f'<span style="font-family:{t["mono"]};font-size:16px;line-height:1.4;color:{c["muted"]}">{html.escape(r["line"])} · WEEK OF {html.escape(r["week"])}</span></div>'
+                       f'{chip(ctx, r["state"], STATE_CHIP.get(r["state"], "WATCH"))}</div>' for r in rows) or _empty(c, ctx, empty)
+        out += (f'<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:{t["mono"]};font-size:18px;font-weight:600;letter-spacing:0.18em;color:{c["accent"]}">{label}</span>'
+                f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{body}</div></div>')
+    sat = b.get("saturated") or []
+    note = "Each name is judged on the latest complete week against its own past year (trendstate.py). A state is attention, not adoption."
+    if sat:
+        note += " Too big for Bluesky to count, so not judged there: " + ", ".join(x["name"] for x in sat) + "."
+    if b.get("x_note"):
+        note += " " + b["x_note"]
+    return out + f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">{html.escape(note)}</p>'
+
+
+def k_move(s, c, ctx):
+    """The move: one line picked by a fixed rule from this week's numbers, with the number it rests on."""
+    t, m = ctx.t, _brief(ctx).get("move") or {}
+    ease = (f'<p style="margin:0;font-size:28px;line-height:1.45;border-left:6px solid {c["muted"]};padding-left:20px">{html.escape(m["ease_off"])}</p>'
+            if m.get("ease_off") else "")
+    return (head(s, c, ctx, 64)
+            + f'<div style="display:flex;flex-direction:column;gap:30px;flex:1;justify-content:center">'
+            f'<p style="margin:0;font-family:{t["display"]};font-weight:400;{display_style(t, c["dark"], 84)}line-height:1.05;text-wrap:balance">{html.escape(m.get("line") or "Run The Scout to see this week.")}</p>'
+            f'<p style="margin:0;font-size:30px;line-height:1.45;font-weight:600;border-left:6px solid {c["accent"]};padding-left:20px">{html.escape(m.get("why") or "")}</p>{ease}</div>'
+            f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">Picked by a fixed rule from the numbers on the previous page. The take is yours.</p>')
+
+
+def k_posts(s, c, ctx):
+    """Four posts to make: starting points tied to this week's receipts (brief.py)."""
+    t, posts = ctx.t, (_brief(ctx).get("posts") or [])[:4]
+    cards = "".join(f'<div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:20px;padding:20px 0;border-top:1.5px solid {c["rule"]}">'
+                    f'<span style="font-family:{t["display"]};font-size:56px;line-height:1;color:{c["accent"]}">{i}</span>'
+                    f'<div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-family:{t["mono"]};font-size:15px;font-weight:600;letter-spacing:0.16em;color:{c["muted"]}">{html.escape(p["kind"])}</span>'
+                    f'<span style="font-size:31px;font-weight:700;line-height:1.2">{html.escape(p["title"][:110])}</span>'
+                    f'<span style="font-size:22px;line-height:1.4">First line: {html.escape(p["first_line"][:150])}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:15px;line-height:1.4;color:{c["muted"]}">RECEIPT · {html.escape(p["receipt"][:120])}</span></div></div>'
+                    for i, p in enumerate(posts, 1))
+    if not cards:
+        cards = _empty(c, ctx, "Not enough moved this week to suggest posts. Run it again next week.")
+    return (head(s, c, ctx, 72) + f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{cards}</div>'
+            f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">Starting points picked from this week\'s numbers. Check each receipt before you post, and make the take yours.</p>')
+
+
+def k_press(s, c, ctx):
+    """What the press wrote this week: headline and outlet counts, the names it wrote about most, the stories (headlines.py)."""
+    t, p = ctx.t, _brief(ctx).get("press") or {}
+    stats = [(f'{p.get("read", 0):,}', "HEADLINES"), (f'{p.get("outlets", 0):,}', "OUTLETS")] + [(f"{k:,}", n.upper()[:16]) for n, k in (p.get("most_named") or [])[:2]]
+    row = "".join(f'<div style="display:flex;flex-direction:column;gap:6px;padding:16px 20px;background:{c["panel"]};border-radius:{3 if t.get("stamps") else 10}px">'
+                  f'<span style="font-family:{t["display"]};font-size:52px;line-height:1">{html.escape(v)}</span>'
+                  f'<span style="font-family:{t["mono"]};font-size:14px;letter-spacing:0.14em;color:{c["muted"]}">{html.escape(l)}</span></div>' for v, l in stats)
+    items = "".join(f'<div style="display:flex;flex-direction:column;gap:6px;padding:15px 0;border-top:1.5px solid {c["rule"]}">'
+                    f'<span style="font-size:26px;font-weight:600;line-height:1.25">{html.escape(h["title"])}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.06em;color:{c["muted"]}">{html.escape(h["outlet"][:40].upper())} · {html.escape(h["date"])}</span></div>'
+                    for h in (p.get("top") or [])[:5]) or _empty(c, ctx, "No headlines came back this week. Check your connection and run it again.")
+    return (head(s, c, ctx, 72) + f'<div style="display:grid;grid-template-columns:repeat({len(stats)},minmax(0,1fr));gap:14px">{row}</div>'
+            + f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{items}</div>'
+            + f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">Last 7 days, one per story, from Google News search and any outlet feeds you added. A count is coverage, not popularity.</p>')
+
+
 def _tbl(c, cols, rows, t):
     head = "".join(f'<span style="font-family:{t["mono"]};font-size:14px;letter-spacing:0.12em;color:{c["muted"]}">{html.escape(h)}</span>' for h, _ in cols)
     tmpl = " ".join(w for _, w in cols)
@@ -741,7 +820,8 @@ def k_take(s, c, ctx):
               + (f'<div style="margin-top:16px;font-family:{t["mono"]};font-size:17px;letter-spacing:.06em;opacity:.7">{html.escape(q["stats"])}</div>' if q.get("stats") else "") + '</div>')
     if ev and s.get("sticker"):  # a small cut-out of the owner on the corner of the receipt
         st = s["sticker"]
-        ev = (f'<div style="position:relative">{ev}<img aria-hidden="true" src="file://{html.escape(st["path"])}" style="position:absolute;right:{st.get("right", -24)}px;{f'top:{st["top"]}px' if "top" in st else f'bottom:{st.get("bottom", -40)}px'};'
+        edge = f"top:{st['top']}px" if "top" in st else f"bottom:{st.get('bottom', -40)}px"  # kept outside the f-string so Python 3.9 (macOS default) can read it
+        ev = (f'<div style="position:relative">{ev}<img aria-hidden="true" src="file://{html.escape(st["path"])}" style="position:absolute;right:{st.get("right", -24)}px;{edge};'
               f'height:{st.get("h", 240)}px;transform:rotate({st.get("tilt", 5)}deg);filter:{sticker_filter(t)};z-index:3"></div>')
     size = s.get("what_size", 29)
     notes = s.get("notes") or ([[s.get("caveat_label", "NOT PROVEN"), s["caveat"]]] if s.get("caveat") else [])
@@ -755,7 +835,7 @@ def k_take(s, c, ctx):
 
 KIND = {"take": k_take, "take_cover": k_take_cover, "story": k_story, "receipts": k_receipts, "signal": k_signal, "signal_cover": k_signal_cover, "backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
         "radar": k_radar, "image_grid": k_image_grid, "metric_chart": k_metric_chart, "groups": k_groups,
-        "tests": k_tests, "quote": k_quote}
+        "tests": k_tests, "quote": k_quote, "states": k_states, "move": k_move, "posts": k_posts, "press": k_press}
 
 OVERFLOW_JS = """<script>document.fonts.ready.then(function(){var r=document.getElementById('frame');var bad=r.scrollHeight>r.clientHeight+1||r.scrollWidth>r.clientWidth+1;
 document.documentElement.setAttribute('data-overflow',bad?'yes':'no');document.documentElement.setAttribute('data-fonts',Array.from(document.fonts).some(function(f){return f.family.replace(/["']/g,'')==='__DISPLAY__'&&f.status==='loaded';})?'ok':'fallback');});</script>"""

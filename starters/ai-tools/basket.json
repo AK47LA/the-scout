@@ -79,5 +79,32 @@
    "github": 100
   }
  },
- "made_at": "2026-10-22"
+ "made_at": "2026-10-22",
+ "outlets": [
+  {
+   "name": "TechCrunch",
+   "rss": "https://techcrunch.com/category/artificial-intelligence/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "The Verge",
+   "rss": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "MIT Technology Review",
+   "rss": "https://www.technologyreview.com/feed/",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "Ars Technica",
+   "rss": "https://feeds.arstechnica.com/arstechnica/index",
+   "checked": "2026-10-28"
+  },
+  {
+   "name": "The Decoder",
+   "rss": "https://the-decoder.com/feed/",
+   "checked": "2026-10-28"
+  }
+ ]
 }

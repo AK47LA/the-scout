@@ -32,39 +32,60 @@ def get(url):
     return None
 
 
-def pull(watchlist, out, pages=2):
+def read_account(acct, pages, seen_ids, now):
+    """One account's newest public posts (up to `pages` pages), as records. Runs in a small worker pool."""
+    h, cursor, recs, ok = acct["handle"], None, [], False
+    for page in range(1 if acct.get("lane") == "owner-follows" else pages):  # follows can run to hundreds: newest page only
+        d = get(API.format(h=h) + (f"?cursor={urllib.parse.quote(cursor)}" if cursor else ""))
+        if not d:
+            break
+        ok = True
+        for r in d.get("results", []):
+            if r.get("type") != "status" or r["id"] in seen_ids:
+                continue
+            a = r.get("author") or {}
+            recs.append({"id": r["id"], "url": r["url"], "author": "@" + (a.get("screen_name") or h), "account": h, "lane": acct.get("lane"),
+                         "reposted_by": bool(r.get("reposted_by")), "text": r.get("text") or "",
+                         "posted_at": datetime.datetime.fromtimestamp(r["created_timestamp"], datetime.timezone.utc).isoformat(),
+                         "captured_at": now.isoformat(timespec="seconds"),
+                         "metrics": {k: r.get(k) for k in ("replies", "reposts", "likes", "bookmarks", "quotes", "views")},
+                         "source": "api.fxtwitter.com public statuses, no login"})
+        cursor = (d.get("cursor") or {}).get("bottom")
+        if not cursor:
+            break
+        time.sleep(1.2)
+    return h, ok, recs
+
+
+def pull(watchlist, out, pages=2, workers=4):
+    from concurrent.futures import ThreadPoolExecutor
     wl = json.load(open(watchlist))
     os.makedirs(out, exist_ok=True)
     path = os.path.join(out, "posts.jsonl")
     seen = {json.loads(l)["id"] for l in open(path)} if os.path.exists(path) else set()
     now = datetime.datetime.now(datetime.timezone.utc)
     read, failed = collections.Counter(), []
+    def keep(f, h, recs):
+        for rec in recs:
+            if rec["id"] not in seen:
+                seen.add(rec["id"])
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                read[h] += 1
     with open(path, "a") as f:
-        for acct in wl["accounts"]:
-            h, cursor = acct["handle"], None
-            for page in range(1 if acct.get("lane") == "owner-follows" else pages):  # follows can run to hundreds: newest page only
-                d = get(API.format(h=h) + (f"?cursor={urllib.parse.quote(cursor)}" if cursor else ""))
-                if not d:
-                    if page == 0:
-                        failed.append(h)
-                    break
-                for r in d.get("results", []):
-                    if r.get("type") != "status" or r["id"] in seen:
-                        continue
-                    seen.add(r["id"])
-                    a = r.get("author") or {}
-                    f.write(json.dumps({"id": r["id"], "url": r["url"], "author": "@" + (a.get("screen_name") or h), "account": h, "lane": acct.get("lane"),
-                                        "reposted_by": bool(r.get("reposted_by")), "text": r.get("text") or "",
-                                        "posted_at": datetime.datetime.fromtimestamp(r["created_timestamp"], datetime.timezone.utc).isoformat(),
-                                        "captured_at": now.isoformat(timespec="seconds"),
-                                        "metrics": {k: r.get(k) for k in ("replies", "reposts", "likes", "bookmarks", "quotes", "views")},
-                                        "source": "api.fxtwitter.com public statuses, no login"}, ensure_ascii=False) + "\n")
-                    read[h] += 1
-                cursor = (d.get("cursor") or {}).get("bottom")
-                if not cursor:
-                    break
-                time.sleep(1.2)
-            time.sleep(0.8)
+        with ThreadPoolExecutor(max_workers=workers) as ex:  # a few at a time: quick, and polite to a free service
+            for h, ok, recs in ex.map(lambda a: read_account(a, pages, frozenset(seen), now), wl["accounts"]):
+                if not ok:
+                    failed.append(h)
+                keep(f, h, recs)
+        if failed:  # the free service turns away bursts: one slower pass for the accounts it refused
+            time.sleep(15)
+            retry, failed = [a for a in wl["accounts"] if a["handle"] in failed], []
+            for a in retry:
+                h, ok, recs = read_account(a, 1, frozenset(seen), now)
+                if not ok:
+                    failed.append(h)
+                keep(f, h, recs)
+                time.sleep(2)
     json.dump({"pulled_at": now.isoformat(timespec="seconds"), "accounts": len(wl["accounts"]), "read": dict(read), "unreadable": failed},
               open(os.path.join(out, "pull-receipt.json"), "w"), indent=1)
     print(f"{sum(read.values())} new posts from {len(read)} of {len(wl['accounts'])} accounts; unreadable: {failed}")
