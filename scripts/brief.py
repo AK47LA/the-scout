@@ -48,6 +48,13 @@ def short(s, n):
     return s if len(s) <= n else s[: n - 1].rsplit(" ", 1)[0] + "…"
 
 
+def first_post(posts):
+    if not posts:
+        return "No posts to suggest from this week's numbers."
+    say = posts[0].get("say") or posts[0]["title"]
+    return "Four posts to make. First: " + say + ("" if say[-1:] in ".?!" else ".")
+
+
 X_WEEKS_NEEDED = 4  # X history starts at the first pull, so early weeks look like jumps; X joins in or out after four weekly pulls
 
 
@@ -126,13 +133,14 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
             p = top_posts.pop(0)
             views = (p.get("metrics") or {}).get("views")
             posts.append({"kind": "REACT", "title": f"Answer {p['author']}: “{short(p.get('text'), 90)}”",
+                          "say": f"answer {p['author']} on X",
                           "first_line": f"{p['author']} said it. Here's my read.",
                           "receipt": f"{p['author']} on X" + (f", {views:,} views" if views else "") + f", {p['posted_at'][:10]}"})
         else:
             h = stories.pop(0)
             if any(n.lower() in used for n in h.get("names", [])) and stories:
                 continue
-            posts.append({"kind": "REACT", "title": f"My read on: {short(h['title'], 90)}",
+            posts.append({"kind": "REACT", "title": f"My read on: {short(h['title'], 90)}", "say": f"react to this week's {h['outlet']} story",
                           "first_line": "This week's story, and what it means for you.", "receipt": f"{h['outlet']}, {h['published'][:10]}"})
     posts = posts[:4]
 
@@ -153,7 +161,8 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
             "press": {"read": counts["headlines"], "outlets": counts["outlets"], "most_named": most_named,
                       "top": [{"title": short(h["title"], 110), "outlet": h["outlet"], "date": h["published"][:10], "url": h.get("url")} for h in press_top]},
             "voice": {"cover": cover, "states": states_v, "move": move["line"] + " " + move["why"],
-                      "posts": ("Four posts to make. First: " + posts[0]["title"]) if posts else "No posts to suggest from this week's numbers.",
+                      # quoted headlines and X posts stay on the page, never in the narration: their words aren't ours to say
+                      "posts": first_post(posts),
                       "press": (f"The press wrote most about {most_named[0][0]} this week." if most_named else
                                 f"{counts['headlines']:,} headlines this week from {counts['outlets']:,} outlets.")},
             "rule": "In and out use trendstate.py on each item's own history. The move and posts are starting points picked by fixed rules from these numbers."}

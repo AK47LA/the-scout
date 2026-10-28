@@ -275,6 +275,15 @@ def weekly_pages(tmp, F, data):
     check("starter edition passes the copy check with a brief", probs == [], probs)
     probs, _ = copycheck.check(tpl, dict(data, brief=empty, radar_gate=gate), False)
     check("starter edition passes the copy check when nothing moved", probs == [], probs)
+    loud = {"read": 1, "outlets": 1, "by_name": {}, "top_outlets": [["Billboard", 1]],
+            "headlines": [{"title": "Billboard predicted Doechii would win, ahead of the curve", "outlet": "Billboard",
+                           "published": "2026-10-28T09:00", "names": []}]}
+    xr = {"recent_posts": 1, "top_by_lane": {"music": [{"author": "@someone", "text": "I predicted this weeks ago",
+                                                         "posted_at": "2026-10-27T10:00", "metrics": {"views": 5000}}]}}
+    for label, b2 in (("headline", brief.build([], loud, None, {"entities": [{"name": "Doechii"}]})),
+                      ("X post", brief.build([], None, xr, {"entities": [{"name": "Doechii"}]}))):
+        probs, _ = copycheck.check(tpl, dict(data, brief=b2, radar_gate=gate), False)
+        check(f"a quoted {label} saying 'predicted' stays out of the narration", probs == [] and b2["posts"], (probs, b2["voice"]["posts"]))
     for th in (render.THEME, render.KAIJU):
         ctx = render.Ctx(dict(th), bdata, {}, {"brand": "THE SCOUT", "series": "TEST", "date": "TODAY", "mark": "M"})
         for kind in ("states", "move", "posts", "press"):
