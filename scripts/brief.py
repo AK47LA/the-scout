@@ -69,30 +69,35 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
     rows = [r for r in rows if r["source"] != "x" or (x_weeks >= X_WEEKS_NEEDED and r["name"].lower() not in accounts)]
     saturated = [r for s in states for r in s.get("saturated", [])]
     best = pick(rows)
-    came_in = [dict(r, line=line(r)) for r in best if r["state"] in IN][:4]
-    peaking = [dict(r, line=line(r)) for r in best if r["state"] == "PEAKING"][:2]
+    # page limits: 3 in, 1 at its high, 2 out fit one 1080x1350 page with room for long names
+    came_in = [dict(r, line=line(r)) for r in best if r["state"] in IN][:3]
+    peaking = [dict(r, line=line(r)) for r in best if r["state"] == "PEAKING"][:1]
     # going out means falling now: FADING or GONE and at least 10% under its own four-week average
     # (a name flat at a low level after one huge spike, or drifting by a point or two, isn't leaving)
     falling = [r for r in best if r["state"] in OUT and (r.get("vs_prior4_pct") or 0) <= -10]  # a real drop, not a 1% drift
-    went_out = [dict(r, line=line(r)) for r in sorted(falling, key=lambda r: r.get("vs_prior4_pct") or 0)][:3]
+    went_out = [dict(r, line=line(r)) for r in sorted(falling, key=lambda r: r.get("vs_prior4_pct") or 0)][:2]
     hl = headlines or {}
     by_name = hl.get("by_name") or {}
+    capped = set(hl.get("capped") or [])  # Google News returns at most 100 items a search: those counts are floors
     xr = x_report or {}
 
     # The move: one fixed rule, written from the numbers
     if came_in:  # the things the reader chose to track come first
         top = max(came_in, key=lambda r: (r["name"].lower() in tracked, r["state"] != "NEW", r.get("vs_prior4_pct") or 0))
         press = by_name.get(top["name"])
+        named = (f", and at least {press} headlines named it this week" if top["name"] in capped
+                 else f", and {press} headlines named it this week") if press else ""
         move = {"name": top["name"], "line": f"Post about {top['name']} this week.",
-                "why": top["line"][0].upper() + top["line"][1:] + (f", and {press} headlines named it this week." if press else ".")}
+                "why": top["line"][0].upper() + top["line"][1:] + named + "."}
     elif peaking:
         top = peaking[0]
         move = {"name": top["name"], "line": f"Say your piece on {top['name']} now.", "why": top["line"][0].upper() + top["line"][1:] + "."}
     else:
         named = sorted(by_name.items(), key=lambda kv: -kv[1])
         if named and named[0][1]:
+            floor = "At least " if named[0][0] in capped else ""
             move = {"name": named[0][0], "line": f"Nothing on your list jumped. The press wrote most about {named[0][0]}.",
-                    "why": f"{named[0][1]} headlines named it this week. Your take on that is the post."}
+                    "why": f"{floor}{named[0][1]} headlines named it this week. Your take on that is the post."}
         else:
             move = {"name": None, "line": "Nothing on your list moved enough to call this week.",
                     "why": "Run it again next week: each run adds a week of history to judge against."}
@@ -122,7 +127,7 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
         posts.append({"kind": "WHAT'S GOING OUT", "title": f"What {r['name']}'s slide tells us.",
                       "first_line": f"{r['name']}: {r['line']}. Here's where the attention went.", "receipt": r["line"]})
         used.add(r["name"].lower())
-    big = {o["name"] for o in (basket or {}).get("outlets", [])} or {o for o, _ in (hl.get("top_outlets") or [])[:5]}
+    big = {o.get("name") or o.get("rss") for o in (basket or {}).get("outlets", [])} or {o for o, _ in (hl.get("top_outlets") or [])[:5]}
     ranked = sorted(hl.get("headlines", []), key=lambda h: h["published"], reverse=True)
     ranked = [h for h in ranked if h["outlet"] in big] + [h for h in ranked if h["outlet"] not in big]  # known outlets first, newest first
     stories = [h for h in ranked if h.get("names")] + [h for h in ranked if not h.get("names")]
@@ -145,17 +150,31 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
     posts = posts[:4]
 
     press_top = ([h for h in ranked if h.get("names")] or ranked)[:5]
-    most_named = [[n, k] for n, k in sorted(by_name.items(), key=lambda kv: -kv[1]) if k][:3]
+    # a name whose search hit the 100 cap can't be ranked against the others: list it first, marked as "100+"
+    most_named = [[n, k, n in capped] for n, k in sorted(by_name.items(), key=lambda kv: (kv[0] not in capped, -kv[1])) if k][:3]
     counts = {"headlines": hl.get("read", 0), "outlets": hl.get("outlets", 0), "x_posts": xr.get("recent_posts", 0),
               "names": len((basket or {}).get("entities", []))}
+    feeds = hl.get("feeds") or []
+    hl_state = "not read" if headlines is None else ("failed" if feeds and all(f.get("outcome") != "ok" for f in feeds) else "ok")
+    x_state = "not read" if x_report is None else "ok"
+
+    def stamp(n, state):
+        return f"{n:,}" if state == "ok" else ("FAILED" if state == "failed" else "NOT READ")
+    stamps = {"headlines": stamp(counts["headlines"], hl_state), "outlets": stamp(counts["outlets"], hl_state),
+              "x_posts": stamp(counts["x_posts"], x_state)}
 
     def names(rs):
         return ", ".join(r["name"] for r in rs)
-    cover = f"This week The Scout read {counts['headlines']:,} headlines from {counts['outlets']:,} outlets"
-    cover += f" and {counts['x_posts']:,} posts from your X watchlist." if counts["x_posts"] else "."
+    if hl_state == "ok":
+        cover = f"This week The Scout read {counts['headlines']:,} headlines from {counts['outlets']:,} outlets"
+        cover += f" and {counts['x_posts']:,} posts from your X watchlist." if counts["x_posts"] else "."
+    else:
+        cover = "The headlines didn't come back this run, so this edition runs on the history data."
+        cover += f" It read {counts['x_posts']:,} posts from your X watchlist." if counts["x_posts"] else ""
     states_v = (f"Coming in: {names(came_in)}. " if came_in else "Nothing on your list came in this week. ")
     states_v += (f"Going out: {names(went_out)}." if went_out else "Nothing went out.")
-    return {"made_at": today.isoformat(), "date": today.strftime("%d %b %Y").upper(), "counts": counts,
+    return {"made_at": today.isoformat(), "date": today.strftime("%d %b %Y").upper(), "counts": counts, "stamps": stamps,
+            "headlines_state": hl_state, "capped": sorted(capped),
             "came_in": came_in, "peaking": peaking, "went_out": went_out, "saturated": saturated[:4],
             "move": move, "posts": posts, "x_note": x_note,
             "press": {"read": counts["headlines"], "outlets": counts["outlets"], "most_named": most_named,
@@ -163,7 +182,8 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
             "voice": {"cover": cover, "states": states_v, "move": move["line"] + " " + move["why"],
                       # quoted headlines and X posts stay on the page, never in the narration: their words aren't ours to say
                       "posts": first_post(posts),
-                      "press": (f"The press wrote most about {most_named[0][0]} this week." if most_named else
+                      "press": (f"The press wrote most about {most_named[0][0]} this week." if most_named and not most_named[0][2] else
+                                f"The press wrote about {most_named[0][0]} at least {most_named[0][1]:,} times this week." if most_named else
                                 f"{counts['headlines']:,} headlines this week from {counts['outlets']:,} outlets.")},
             "rule": "In and out use trendstate.py on each item's own history. The move and posts are starting points picked by fixed rules from these numbers."}
 

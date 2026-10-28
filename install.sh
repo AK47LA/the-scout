@@ -62,6 +62,17 @@ for d in "$HOME/.codex" "$HOME/.claude"; do
   if [ -L "$target" ] && [ "$(readlink "$target")" = "$DIR" ]; then
     say "Already linked into $target"; LINKED=1; continue
   fi
+  if [ -L "$target" ]; then  # a link from an earlier download: agents would keep running that older copy
+    old="$(readlink "$target")"
+    if [ ! -e "$old" ] || [ -f "$old/scripts/scout.py" ]; then
+      if yes_no "$target points to another copy of The Scout ($old). Point it at this one?"; then
+        rm "$target" && ln -s "$DIR" "$target" && say "Linked into $target (was $old)" && LINKED=1
+      else
+        say "Left $target pointing at $old"
+      fi
+      continue
+    fi
+  fi
   if [ -e "$target" ] || [ -L "$target" ]; then
     say "Something else is already at $target, so it was left alone."
     continue

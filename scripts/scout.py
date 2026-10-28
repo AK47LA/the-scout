@@ -117,7 +117,7 @@ def build_basket(niche, names, interactive):
 
 
 WEEK_SLIDES = ("states", "move", "posts", "press")  # the pages every edition carries since the 28 Oct 2026 update
-X_STAMP = {"value": "{{brief.counts.x_posts|thousands}}", "label": "X POSTS", "icon": "eye"}
+X_STAMP = {"value": "{{brief.stamps.x_posts}}", "label": "X POSTS", "icon": "eye"}
 
 
 def template():
@@ -157,6 +157,9 @@ def refresh_edition(path, has_x):
     if cover is not None and not cover.get("stamps_row"):
         cover["stamps_row"] = template()["slides"][0]["stamps_row"]
         cover["voiceover"] = "{{brief.voice.cover}}"
+    for it in (cover or {}).get("stamps_row", []):  # editions made before 28 Oct showed a failed read as 0
+        for k in ("headlines", "outlets", "x_posts"):
+            it["value"] = (it.get("value") or "").replace("{{brief.counts.%s|thousands}}" % k, "{{brief.stamps.%s}}" % k)
     if cover is not None and has_x and not any("x_posts" in (it.get("value") or "") for it in cover.get("stamps_row", [])):
         cover["stamps_row"].append(dict(X_STAMP))
     json.dump(ed, open(path, "w"), ensure_ascii=False, indent=1)
@@ -175,7 +178,7 @@ def build_watchlist(niche, handles, interactive):
     """X accounts the reader names, each read once to confirm it exists and to show its name before it's kept."""
     accounts, today = [], datetime.date.today().isoformat()
     for raw in handles:
-        h = raw.strip().lstrip("@").split("/")[-1]
+        h = raw.strip().split("?")[0].rstrip("/").lstrip("@").split("/")[-1]  # @name, name or a pasted x.com/name/ link
         if not re.fullmatch(r"[A-Za-z0-9_]{1,15}", h):
             say(f"  {raw}: not an X handle, skipped")
             continue

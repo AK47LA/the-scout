@@ -59,6 +59,8 @@ def main():
         a.slides = d.get("weekly_slides", a.slides)
         a.pull = a.discover = a.media = a.headlines = True
     os.makedirs(a.out, exist_ok=True)
+    import time
+    t0 = time.time() - 2  # files written from here on belong to this run
     summary = {"started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "steps": {}}
 
     # 1. Audit, history and changes since the last audit
@@ -155,8 +157,12 @@ def main():
         rc2 = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xpublic.py"), "report", xo, "--hours", "168"]
                               + (["--history", d["x_history"]] if d.get("x_history") else []))
         summary["steps"]["x_public"] = {"exit": max(rc, rc2), "file": os.path.join(xo, "report.json")}
-        rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "x", os.path.join(xo, "posts.jsonl"),
-                              os.path.join(a.out, "states-x.json")])
+        # every weekly pull, so each week is counted from its own pull, not from today's two pages per account
+        hist = d.get("x_history") or os.path.dirname(xo)
+        pulls = sorted(set(glob.glob(os.path.join(hist, "*", "posts.jsonl")) + [os.path.join(xo, "posts.jsonl")]))
+        tracked = [e["name"] for e in json.load(open(a.signals)).get("entities", [])] if a.signals and os.path.exists(a.signals) else []
+        rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "trendstate.py"), "x", *[p for p in pulls if os.path.exists(p)],
+                              os.path.join(a.out, "states-x.json")] + (["--names", ",".join(tracked)] if tracked else []))
         summary["steps"]["states_x"] = {"exit": rc, "file": os.path.join(a.out, "states-x.json")}
 
     # 2d+. Discovery leads for the analyst (an agent's fuller edition; slow, so only with --discover)
@@ -189,10 +195,12 @@ def main():
     if a.signals or a.headlines:
         xo = d.get("x_public_dir") or os.path.join(a.out, "x")
         cmd = [sys.executable, "-I", os.path.join(HERE, "brief.py"), os.path.join(a.out, "brief.json")]
+        def this_run(p):  # a file left by an earlier run would put last week's numbers on this week's pages
+            return os.path.exists(p) and os.path.getmtime(p) >= t0
         for name, flag in (("states-signals.json", "--states"), ("states-x.json", "--states"), ("headlines.json", "--headlines")):
-            if os.path.exists(os.path.join(a.out, name)):
+            if this_run(os.path.join(a.out, name)):
                 cmd += [flag, os.path.join(a.out, name)]
-        if d.get("x_watchlist") and os.path.exists(os.path.join(xo, "report.json")):
+        if d.get("x_watchlist") and this_run(os.path.join(xo, "report.json")):
             cmd += ["--x-report", os.path.join(xo, "report.json"), "--watchlist", d["x_watchlist"]]
             hist = d.get("x_history") or os.path.dirname(xo)
             pulls = {datetime.date.fromisoformat(n).isocalendar()[:2] for n in (os.listdir(hist) if os.path.isdir(hist) else [])

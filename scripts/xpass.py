@@ -5,7 +5,8 @@
   python3 xpass.py ingest OUT_DIR         posts.jsonl + trends.jsonl -> manifest.json for terms.py; writes the pass receipt
   python3 xpass.py status OUT_DIR         exit 0 if this pass already finished
   python3 xpass.py follows OUT_DIR        add accounts from people.jsonl (the owner's following page) to the watchlist
-The reading itself is done by an agent in a browser that is already signed in, read only: no likes, follows, replies, reposts,
+The whole pass is opt-in: plan and reserve refuse unless local.json has "x_owner_consent": true, because it drives the
+owner's signed-in X. The reading itself is done by an agent in a browser that is already signed in, read only: no likes, follows, replies, reposts,
 bookmarks, DMs, compose, and no sign-in. It appends one JSON line per post to posts.jsonl and per trend to trends.jsonl:
   posts.jsonl   {"page_id", "url", "author", "text", "posted_at", "metrics": {"replies", "reposts", "likes", "views"}}
   trends.jsonl  {"page_id", "name", "context", "posts"}
@@ -65,8 +66,9 @@ def x_handle_for(account):
     return None, None
 
 
-CONSENT_NOTE = ("Reading your bookmarks and following list means an agent drives your signed-in X. X's rules don't allow automated "
-                "access, so this can put your account at risk. It runs only when local.json has \"x_owner_consent\": true.")
+CONSENT_NOTE = ("The X pass means an agent drives your signed-in X (searches, trends, your bookmarks and following). X's rules "
+                "don't allow automated access, so this can put your account at risk. It runs only when local.json has "
+                "\"x_owner_consent\": true. Without it, The Scout reads X from public posts only (xpublic.py).")
 
 
 def owner_pages(owner, watchlist_p, consent=False):
@@ -190,6 +192,8 @@ def reserve(out, cfg=None):
     cfg = load_config() if cfg is None else cfg
     gate = cfg.get("x_gate")
     now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    if cfg.get("x_owner_consent") is not True:  # every signed-in page needs the owner's yes, not only their own pages
+        return {"allowed": False, "gate": "x_owner_consent", "reason": CONSENT_NOTE, "asked_at": now}
     if not gate:
         res = {"allowed": True, "gate": None, "reason": "No gate configured; the reader keeps to read-only rules", "asked_at": now}
     else:
@@ -272,6 +276,8 @@ def main():
     arg = lambda k, d=None: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else d
     if mode == "plan":
         cfg = load_config()
+        if cfg.get("x_owner_consent") is not True:
+            sys.exit("Not planning an X pass. " + CONSENT_NOTE)
         root = os.path.expanduser(cfg.get("root", "."))
         path = lambda k, flag: arg(flag) or (os.path.join(root, cfg[k]) if cfg.get(k) else None)
         res = plan(out, path("calls", "--calls"), path("registry", "--registry"), arg("--terms"), arg("--tools"),

@@ -20,7 +20,7 @@ The Scout reads your niche every time you run it: this week's headlines, the pub
 
 Your editions live in **Documents › The Scout**, one folder per niche.
 
-**Once a week, double-click Make my Scout edition.** It doesn't run by itself. Each run adds the newest weeks of data, today's headlines and the X posts since last time, then makes a fresh edition dated today. To watch a different niche, double-click **Start a new niche**.
+**Once a week, double-click Make my Scout edition.** It doesn't run by itself. Each run adds the newest weeks of data, today's headlines and the newest X posts, then makes a fresh edition dated today. To watch a different niche, double-click **Start a new niche**.
 
 What the installer needs: Python (your Mac offers to install it if it's missing), Google Chrome or another Chromium browser such as Edge or Brave, and optionally ffmpeg for the audio and video. Without ffmpeg you still get the PDF and images.
 
@@ -43,7 +43,7 @@ If you use Codex or Claude Code, run the installer once, then say:
 
 Your agent runs the same setup for you, reads the results, and can write a fuller weekly edition with judgment and dated calls. Ask it "what's moving this week?" after each refresh.
 
-Your agent can also read your own X bookmarks and following list in your signed-in browser, but only if you switch it on. It's off by default because X's rules don't allow automated access, so it can put your account at risk. To switch it on, tell your agent you accept that, and it adds `"x_owner_consent": true` to `local.json`.
+Your agent can also read X in your signed-in browser (searches, trends, your bookmarks and following list), but only if you switch it on. It's off by default because X's rules don't allow automated access, so it can put your account at risk. To switch it on, tell your agent you accept that, and it adds `"x_owner_consent": true` to `local.json`.
 
 ## Ready-made starters
 

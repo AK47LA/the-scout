@@ -12,6 +12,8 @@ Prefer the terminal?
 bash install.sh
 ```
 
+It asks before installing ffmpeg and before linking The Scout into Codex or Claude Code. `bash install.sh --yes` is for agents: it answers yes to linking (and to replacing a link to an older copy), skips ffmpeg and skips the guided setup.
+
 No install? Use **Scout Lite** in Claude: upload `lite/scout-lite.zip` under Customize › Skills, turn on web search, and say "Run my Scout for this week." See `lite/README.md`.
 
 Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie games, watching Balatro, Peak and Blue Prince." `SKILL.md` is the playbook your agent follows.
@@ -20,7 +22,7 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 
 - A Mac with Python 3.9 or later. The Python that comes with macOS works; the installer offers to add it if it's missing.
 - Google Chrome, or another Chromium browser such as Edge or Brave, to draw the pages.
-- ffmpeg for the audio and video (optional; the installer adds it if you have Homebrew).
+- ffmpeg for the audio and video (optional; the installer offers to add it if you have Homebrew).
 - An internet connection. No accounts or keys are required; the keys listed in `START_HERE.md` switch on extra sources.
 
 ## Where the data comes from
@@ -68,7 +70,7 @@ A `local.json` beside this file can set default paths for your own machine. Keep
 
 ## What it never does
 
-Post, send, schedule anything without you, sign in to your accounts, accept cookies, or get round a paywall or login. It calls something rising or fading only with the measured numbers on the page, and never claims it spotted something early or predicted it before its ledger proves it. X is read from public posts only. An agent can also read your own bookmarks and following list in your signed-in browser, but only after you switch it on (`"x_owner_consent": true` in local.json): X's rules don't allow automated access, so it can put your account at risk.
+Post, send, schedule anything without you, sign in to your accounts, accept cookies, or get round a paywall or login. It calls something rising or fading only with the measured numbers on the page, and never claims it spotted something early or predicted it before its ledger proves it. X is read from public posts only, unless you switch on the signed-in X pass (`"x_owner_consent": true` in local.json). With it on, an agent reads searches, trends, your bookmarks and your following list in your signed-in browser. X's rules don't allow automated access, so it can put your account at risk.
 
 ## Limits
 

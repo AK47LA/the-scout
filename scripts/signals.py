@@ -296,7 +296,10 @@ def pull(basket, out_dir, refresh=False, workers=8):
             except Exception:
                 old = None
             fetched = (old or {}).get("fetched_at", "")[:10]
-            fresh = fetched and (datetime.date.today() - datetime.date.fromisoformat(fetched)).days < 6
+            # fresh only if fetched since this Monday: data fetched before it may hold last week as a part-week,
+            # and last week is the one being judged now
+            this_monday = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
+            fresh = bool(fetched) and datetime.date.fromisoformat(fetched) >= this_monday
             if fresh or src not in BACKFILLED or not (old or {}).get("weekly"):
                 rec["outcome"] = "cached"
                 return rec

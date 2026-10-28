@@ -208,7 +208,7 @@ def stamp_row(s, c, ctx):
     return '<div style="display:flex;gap:12px">' + "".join(
         f'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:96px;padding:10px 10px 8px;border:3px solid {t["amber"] if it.get("alert") else t["ice"]};'
         f'border-radius:3px;color:{t["amber"] if it.get("alert") else t["ice"]};transform:rotate({(-1) ** i * 1.5}deg);{"filter:url(#rough);" if t.get("handmade") else ""}">'
-        f'<span style="font-family:{t["display"]};font-size:40px;line-height:1">{ctx.txt(it.get("value"))}</span>'
+        f'<span style="font-family:{t["display"]};font-size:{22 if re.search("[A-Za-z]", ctx.txt(it.get("value"))) else 40}px;line-height:1;min-height:40px;display:flex;align-items:center">{ctx.txt(it.get("value"))}</span>'
         f'{icon(it.get("icon", ""), t["amber"] if it.get("alert") else t["ice"], 38)}'
         f'<span style="font-family:{t["mono"]};font-size:13px;letter-spacing:0.14em">{ctx.txt(it.get("label"))}</span></div>'
         for i, it in enumerate(items)) + "</div>"
@@ -554,7 +554,7 @@ def k_states(s, c, ctx):
             continue
         body = "".join(f'<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:13px 0;border-top:1.5px solid {c["rule"]}">'
                        f'<div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:27px;font-weight:600;line-height:1.2">{html.escape(r["name"][:40])}</span>'
-                       f'<span style="font-family:{t["mono"]};font-size:16px;line-height:1.4;color:{c["muted"]}">{html.escape(r["line"])} · WEEK OF {html.escape(r["week"])}</span></div>'
+                       f'<span style="font-family:{t["mono"]};font-size:16px;line-height:1.4;color:{c["muted"]};{CLAMP2}">{html.escape(r["line"])} · WEEK OF {html.escape(r["week"])}</span></div>'
                        f'{chip(ctx, r["state"], STATE_CHIP.get(r["state"], "WATCH"))}</div>' for r in rows) or _empty(c, ctx, empty)
         out += (f'<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:{t["mono"]};font-size:18px;font-weight:600;letter-spacing:0.18em;color:{c["accent"]}">{label}</span>'
                 f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{body}</div></div>')
@@ -579,15 +579,28 @@ def k_move(s, c, ctx):
             f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">Picked by a fixed rule from the numbers on the previous page. The take is yours.</p>')
 
 
+CLAMP2 = "display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"
+CLAMP1 = "white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+
+
+def _cut(s, n):
+    """Cut at a word, never mid-word, and close a quote the cut opened."""
+    s = " ".join((s or "").split())
+    if len(s) <= n:
+        return s
+    s = s[: n - 1].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return s + "”" if s.count("“") > s.count("”") else s
+
+
 def k_posts(s, c, ctx):
     """Four posts to make: starting points tied to this week's receipts (brief.py)."""
     t, posts = ctx.t, (_brief(ctx).get("posts") or [])[:4]
     cards = "".join(f'<div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:20px;padding:20px 0;border-top:1.5px solid {c["rule"]}">'
                     f'<span style="font-family:{t["display"]};font-size:56px;line-height:1;color:{c["accent"]}">{i}</span>'
                     f'<div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-family:{t["mono"]};font-size:15px;font-weight:600;letter-spacing:0.16em;color:{c["muted"]}">{html.escape(p["kind"])}</span>'
-                    f'<span style="font-size:31px;font-weight:700;line-height:1.2">{html.escape(p["title"][:110])}</span>'
-                    f'<span style="font-size:22px;line-height:1.4">First line: {html.escape(p["first_line"][:150])}</span>'
-                    f'<span style="font-family:{t["mono"]};font-size:15px;line-height:1.4;color:{c["muted"]}">RECEIPT · {html.escape(p["receipt"][:120])}</span></div></div>'
+                    f'<span style="font-size:31px;font-weight:700;line-height:1.2;{CLAMP2}">{html.escape(_cut(p["title"], 110))}</span>'
+                    f'<span style="font-size:22px;line-height:1.4;{CLAMP2}">First line: {html.escape(_cut(p["first_line"], 150))}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:15px;line-height:1.4;color:{c["muted"]};{CLAMP1}">RECEIPT · {html.escape(_cut(p["receipt"], 120))}</span></div></div>'
                     for i, p in enumerate(posts, 1))
     if not cards:
         cards = _empty(c, ctx, "Not enough moved this week to suggest posts. Run it again next week.")
@@ -598,12 +611,14 @@ def k_posts(s, c, ctx):
 def k_press(s, c, ctx):
     """What the press wrote this week: headline and outlet counts, the names it wrote about most, the stories (headlines.py)."""
     t, p = ctx.t, _brief(ctx).get("press") or {}
-    stats = [(f'{p.get("read", 0):,}', "HEADLINES"), (f'{p.get("outlets", 0):,}', "OUTLETS")] + [(f"{k:,}", n.upper()[:16]) for n, k in (p.get("most_named") or [])[:2]]
+    st = _brief(ctx).get("stamps") or {}
+    stats = [(st.get("headlines") or f'{p.get("read", 0):,}', "HEADLINES"), (st.get("outlets") or f'{p.get("outlets", 0):,}', "OUTLETS")]
+    stats += [(f"{m[1]:,}" + ("+" if len(m) > 2 and m[2] else ""), m[0].upper()[:16]) for m in (p.get("most_named") or [])[:2]]
     row = "".join(f'<div style="display:flex;flex-direction:column;gap:6px;padding:16px 20px;background:{c["panel"]};border-radius:{3 if t.get("stamps") else 10}px">'
                   f'<span style="font-family:{t["display"]};font-size:52px;line-height:1">{html.escape(v)}</span>'
                   f'<span style="font-family:{t["mono"]};font-size:14px;letter-spacing:0.14em;color:{c["muted"]}">{html.escape(l)}</span></div>' for v, l in stats)
     items = "".join(f'<div style="display:flex;flex-direction:column;gap:6px;padding:15px 0;border-top:1.5px solid {c["rule"]}">'
-                    f'<span style="font-size:26px;font-weight:600;line-height:1.25">{html.escape(h["title"])}</span>'
+                    f'<span style="font-size:26px;font-weight:600;line-height:1.25;{CLAMP2}">{html.escape(h["title"])}</span>'
                     f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.06em;color:{c["muted"]}">{html.escape(h["outlet"][:40].upper())} · {html.escape(h["date"])}</span></div>'
                     for h in (p.get("top") or [])[:5]) or _empty(c, ctx, "No headlines came back this week. Check your connection and run it again.")
     return (head(s, c, ctx, 72) + f'<div style="display:grid;grid-template-columns:repeat({len(stats)},minmax(0,1fr));gap:14px">{row}</div>'

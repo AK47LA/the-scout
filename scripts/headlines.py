@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) TheScout/1.0 (personal feed reader; read-only)"}
 GNEWS = "https://news.google.com/rss/search?{}"
+GNEWS_CAP = 100  # Google News returns at most 100 items per search, so a name at 100 has a count that is a floor
 
 
 def fetch(url, timeout=25):
@@ -29,7 +30,7 @@ def fetch(url, timeout=25):
         except Exception as e:  # noqa: BLE001
             err = e
         time.sleep(2 * (attempt + 1))
-    raise err
+    raise err or OSError(f"too many redirects: {url}")
 
 
 def when(text):
@@ -86,12 +87,14 @@ def run(basket, days=7, now=None, fetcher=fetch):
     for o in basket.get("outlets", []):
         if o.get("rss"):
             feeds.append((o.get("name") or o["rss"], f"outlet: {o.get('name') or o['rss']}", o["rss"], o.get("name") or o["rss"]))
-    seen, kept, receipts = set(), [], []
+    seen, kept, receipts, capped = set(), [], [], []
     for label, what, url, outlet in feeds:
         try:
             got = parse(fetcher(url), outlet)
             fresh = [i for i in got if i["published"] and i["published"] >= cut]
             receipts.append({"feed": what, "outcome": "ok", "items": len(got), "this_window": len(fresh)})
+            if outlet is None and len(got) >= GNEWS_CAP and what.startswith("name: "):
+                capped.append(what[len("name: "):])
         except Exception as e:  # noqa: BLE001
             receipts.append({"feed": what, "outcome": "failed", "error": str(e)[:160]})
             continue
@@ -111,11 +114,11 @@ def run(basket, days=7, now=None, fetcher=fetch):
     outlets = collections.Counter(i["outlet"] for i in kept)
     return {"generated_at": now.isoformat(timespec="seconds"), "window_days": days, "niche": niche,
             "read": len(kept), "outlets": len(outlets), "top_outlets": outlets.most_common(10),
-            "by_name": {n: by_name.get(n, 0) for n in names},
+            "by_name": {n: by_name.get(n, 0) for n in names}, "capped": capped,
             "headlines": [dict(i, published=i["published"].isoformat(timespec="minutes")) for i in kept[:60]],
             "feeds": receipts,
             "note": "Headlines from the last %d days, one per story title, from Google News search and any outlet feeds in the basket. "
-                    "A count is coverage, not popularity." % days}
+                    "A count is coverage, not popularity. Names in 'capped' hit Google News's 100-item limit, so their counts are floors." % days}
 
 
 def main():

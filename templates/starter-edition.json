@@ -13,8 +13,8 @@
    "headline": "My niche, this week.",
    "sub": "What came in, what went out, the move, and four posts to make. Every number from public data.",
    "stamps_row": [
-    {"value": "{{brief.counts.headlines|thousands}}", "label": "HEADLINES", "icon": "eye"},
-    {"value": "{{brief.counts.outlets|thousands}}", "label": "OUTLETS", "icon": "lens"}
+    {"value": "{{brief.stamps.headlines}}", "label": "HEADLINES", "icon": "eye"},
+    {"value": "{{brief.stamps.outlets}}", "label": "OUTLETS", "icon": "lens"}
    ],
    "voiceover": "{{brief.voice.cover}}",
    "source": "Edit the headline and footer marks in this file"

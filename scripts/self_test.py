@@ -202,9 +202,11 @@ def main():
     check("terms reads the newest X pass against earlier ones", latest == "2026-10-23" and len(rec) == 3 and len(base) == 2)
     hit = [t for t in terms.surface(rec, base, min_docs=3) if t["term"] == "decision model"]
     check("terms surfaces a phrase new on X", bool(hit) and hit[0]["new"])
-    denied = xpass.reserve(os.path.join(tmp, "gate"), {"x_gate": {"cwd": tmp, "cmd": [sys.executable, "-c",
+    denied = xpass.reserve(os.path.join(tmp, "gate"), {"x_owner_consent": True, "x_gate": {"cwd": tmp, "cmd": [sys.executable, "-c",
                            "print('{\"allowed\": false, \"reason\": \"Outside window\"}')"]}})
     check("xpass reserve honours a denied gate", denied["allowed"] is False and denied["reason"] == "Outside window", denied)
+    no_yes = xpass.reserve(os.path.join(tmp, "gate"), {})
+    check("xpass reserve refuses every signed-in page without the owner's consent", no_yes["allowed"] is False and no_yes["gate"] == "x_owner_consent", no_yes)
 
     import formats  # noqa: E402
     base = {"name": "one move per video, in levels", "keep": ["one move per video"], "make_yours": ["the skill"],
@@ -280,6 +282,19 @@ def weekly_pages(tmp, F, data):
                            "published": "2026-10-28T09:00", "names": []}]}
     xr = {"recent_posts": 1, "top_by_lane": {"music": [{"author": "@someone", "text": "I predicted this weeks ago",
                                                          "posted_at": "2026-10-27T10:00", "metrics": {"views": 5000}}]}}
+    rss_only = brief.build([], hl, None, {"entities": [{"name": "Katseye"}], "outlets": [{"rss": "https://p.example/feed"}]})
+    check("brief takes an outlet given only as a feed address", rss_only["posts"] is not None)
+    down = brief.build([], dict(failing, feeds=[{"feed": "niche: Music", "outcome": "failed"}]), None, None)
+    check("a failed headline read shows FAILED, not 0", down["stamps"]["headlines"] == "FAILED" and "didn't come back" in down["voice"]["cover"], down["stamps"])
+    check("no headline read shows NOT READ, not 0", brief.build([], None, None, None)["stamps"]["headlines"] == "NOT READ")
+    full = brief.build([], dict(hl, by_name={"Katseye": 77, "Doechii": 90}, capped=["Katseye"]), None, None)
+    check("a name whose search hit the 100 cap is marked, not ranked", full["press"]["most_named"][0] == ["Katseye", 77, True]
+          and "at least" in full["voice"]["press"], full["press"]["most_named"])
+    many = (b'<rss><channel>' + b''.join(b'<item><title>Story %d - Billboard</title><pubDate>Tue, 27 Oct 2026 10:00:00 GMT</pubDate>'
+            b'<source url="https://b.example">Billboard</source></item>' % i for i in range(100)) + b'</channel></rss>')
+    hit = headlines.run({"niche": "Music", "entities": [{"name": "Katseye"}]}, 7, now, fetcher=lambda u: many)
+    check("headlines note a name search that hit Google News's 100 cap", hit["capped"] == ["Katseye"], hit["capped"])
+    check("long post titles are cut at a word and keep their closing quote", render._cut("Answer @a: “" + "word " * 40 + "”", 60).endswith("…”"))
     for label, b2 in (("headline", brief.build([], loud, None, {"entities": [{"name": "Doechii"}]})),
                       ("X post", brief.build([], None, xr, {"entities": [{"name": "Doechii"}]}))):
         probs, _ = copycheck.check(tpl, dict(data, brief=b2, radar_gate=gate), False)
@@ -319,6 +334,27 @@ def weekly_pages(tmp, F, data):
     merged = json.load(open(path))["weekly"]
     check("weekly refresh fetches only the recent weeks", seen and seen[0] == dt.date(2026, 9, 14), seen)
     check("weekly refresh keeps history and replaces recent weeks", merged == {"2026-09-28": 10, "2026-10-05": 25, "2026-10-12": 30}, merged)
+    # fetched on an earlier day this week: last week was already complete, so the saved data is reused
+    mon = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
+    json.dump(dict(old, fetched_at=mon.isoformat() + "T08:00:00+00:00"), open(path, "w"))
+    seen.clear()
+    signals.FETCH["wikipedia"] = lambda q, a, b: seen.append(a) or {"weekly": {}}
+    try:
+        recs = signals.pull({"start": "2023-01-02", "entities": [{"name": "watch", "wikipedia": "Watch"}]}, rdir, workers=1)
+        json.dump(dict(old, fetched_at=(mon - dt.timedelta(days=2)).isoformat() + "T08:00:00+00:00"), open(path, "w"))
+        signals.pull({"start": "2023-01-02", "entities": [{"name": "watch", "wikipedia": "Watch"}]}, rdir, workers=1)
+    finally:
+        signals.FETCH["wikipedia"] = saved
+    check("data fetched this week is reused", recs and recs[0]["outcome"] == "cached", recs)
+    check("data fetched last weekend is refreshed, so last week isn't judged as a part-week", len(seen) == 1, seen)
+    xa, xb = os.path.join(tmp, "xa.jsonl"), os.path.join(tmp, "xb.jsonl")
+    with open(xa, "w") as f:
+        f.write(json.dumps({"id": "1", "text": "Katseye tour", "posted_at": "2026-10-13T10:00:00+00:00"}) + "\n")
+    with open(xb, "w") as f:
+        f.write(json.dumps({"id": "2", "text": "Katseye again", "posted_at": "2026-10-20T10:00:00+00:00"}) + "\n")
+        f.write(json.dumps({"id": "3", "text": "Rolling Stone cover", "posted_at": "2026-10-20T11:00:00+00:00"}) + "\n")
+    got = trendstate.from_x([xa, xb], ["Katseye"], minimum=1, today=dt.date(2026, 10, 28))
+    check("X states count every weekly pull, on the tracked names only", [r["name"] for r in got] == ["Katseye"], got)
 
     ep = os.path.join(tmp, "old-edition.json")
     json.dump({"date": "22 OCT 2026", "slides": [{"id": "cover", "kind": "cover", "headline": "Music"}, {"id": "gate", "kind": "quote"}]}, open(ep, "w"))
@@ -328,6 +364,10 @@ def weekly_pages(tmp, F, data):
     check("refresh adds the weekly pages to an older edition", [s["kind"] for s in ed["slides"]][:5] == ["cover", "states", "move", "posts", "press"],
           [s["kind"] for s in ed["slides"]])
     check("refresh adds the X count to the cover when X is read", any("x_posts" in i["value"] for i in ed["slides"][0]["stamps_row"]))
+    json.dump({"date": "27 OCT 2026", "slides": [{"id": "cover", "kind": "cover", "stamps_row": [
+        {"value": "{{brief.counts.headlines|thousands}}", "label": "HEADLINES"}]}]}, open(ep, "w"))
+    scout.refresh_edition(ep, has_x=False)
+    check("refresh moves an older cover to stamps that can say FAILED", json.load(open(ep))["slides"][0]["stamps_row"][0]["value"] == "{{brief.stamps.headlines}}")
 
     lite = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lite")
     z = zipfile.ZipFile(os.path.join(lite, "scout-lite.zip"))
