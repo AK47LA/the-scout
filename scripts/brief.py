@@ -7,12 +7,13 @@ Built only from this run's measured files: trendstate.py states, headlines.py, x
 number it rests on. The move and the four posts are starting points picked by fixed rules from those numbers; the take
 is the reader's. Nothing here claims a thing was spotted early or predicted.
 """
-import datetime, json, os, sys
+import datetime, json, os, re, sys
 
 LABEL = {"wikipedia": "Wikipedia views", "bluesky": "Bluesky posts", "hackernews": "Hacker News stories", "github": "GitHub stars",
          "youtube": "YouTube", "chartmetric": "Chartmetric", "x": "mentions on your X watchlist"}
 ORDER = {"NEW": 0, "JUST TRENDING": 1, "RISING": 2, "PEAKING": 3, "STEADY": 4, "FADING": 5, "GONE": 6}
 IN, OUT = ("NEW", "JUST TRENDING", "RISING"), ("FADING", "GONE")
+CJK = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uff00-\uffef]")
 
 
 def line(r):
@@ -128,10 +129,11 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
                       "first_line": f"{r['name']}: {r['line']}. Here's where the attention went.", "receipt": r["line"]})
         used.add(r["name"].lower())
     big = {o.get("name") or o.get("rss") for o in (basket or {}).get("outlets", [])} or {o for o, _ in (hl.get("top_outlets") or [])[:5]}
-    ranked = sorted(hl.get("headlines", []), key=lambda h: h["published"], reverse=True)
+    # English only on the page (the copy check's rule): a headline or post in Chinese, Japanese or Korean script is left out
+    ranked = sorted((h for h in hl.get("headlines", []) if not CJK.search(h["title"])), key=lambda h: h["published"], reverse=True)
     ranked = [h for h in ranked if h["outlet"] in big] + [h for h in ranked if h["outlet"] not in big]  # known outlets first, newest first
     stories = [h for h in ranked if h.get("names")] + [h for h in ranked if not h.get("names")]
-    top_posts = sorted((p for lane in (xr.get("top_by_lane") or {}).values() for p in lane),  # posts naming a tracked name first
+    top_posts = sorted((p for lane in (xr.get("top_by_lane") or {}).values() for p in lane if not CJK.search(p.get("text") or "")),  # posts naming a tracked name first
                        key=lambda p: (not any(n in (p.get("text") or "").lower() for n in tracked), -((p.get("metrics") or {}).get("views") or 0)))[:1]
     while len(posts) < 4 and (stories or top_posts):
         if top_posts and (len(posts) % 2 == 1 or not stories):

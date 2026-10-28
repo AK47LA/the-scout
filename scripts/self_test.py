@@ -282,6 +282,10 @@ def weekly_pages(tmp, F, data):
                            "published": "2026-10-28T09:00", "names": []}]}
     xr = {"recent_posts": 1, "top_by_lane": {"music": [{"author": "@someone", "text": "I predicted this weeks ago",
                                                          "posted_at": "2026-10-27T10:00", "metrics": {"views": 5000}}]}}
+    kr = dict(hl, headlines=[dict(hl["headlines"][0], title="위버스 KATSEYE Media live")] + hl["headlines"])
+    kb = brief.build([], kr, None, None)
+    check("a headline in Korean script stays off the page", all("위" not in h["title"] for h in kb["press"]["top"])
+          and all("위" not in p["title"] for p in kb["posts"]), kb["press"]["top"])
     rss_only = brief.build([], hl, None, {"entities": [{"name": "Katseye"}], "outlets": [{"rss": "https://p.example/feed"}]})
     check("brief takes an outlet given only as a feed address", rss_only["posts"] is not None)
     down = brief.build([], dict(failing, feeds=[{"feed": "niche: Music", "outcome": "failed"}]), None, None)
