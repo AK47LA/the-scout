@@ -33,6 +33,7 @@ What the installer needs: Python (your Mac offers to install it if it's missing)
 | The move | One thing to do this week, picked by a fixed rule from those numbers |
 | Four posts to make | Starting points, each tied to its receipt. The take is yours |
 | The press | The week's headlines about your niche and the names the press wrote about most |
+| Your saves | What you sent to The Scout from your phone this week (once you've set up the Send to Scout shortcut) |
 | History | A year of weekly Wikipedia views and Bluesky posts for each thing you track |
 
 ## The agent way: just ask
@@ -70,6 +71,22 @@ python3 scripts/scout.py run
 ```
 
 Everything underneath is plain Python in `scripts/`. `README.md` lists every command, and `SKILL.md` is the playbook agents follow.
+
+## Send things to The Scout from your phone
+
+Instagram doesn't let any app read your saved posts. So instead of tapping Save, tap Share, then **Send to Scout**. Each week your edition gets a "What you saved this week" page, and one of your four posts becomes a breakdown of something you sent. It works from Instagram, TikTok, X, YouTube and any web page.
+
+Set it up once on your iPhone (about two minutes):
+
+1. Open **Shortcuts**, tap **+**, and name the shortcut **Send to Scout**.
+2. Tap the **(i)** button and turn on **Show in Share Sheet**. Let it receive URLs, Text and Safari web pages.
+3. Add a **Text** action. Put **Current Date**, a space, then **Shortcut Input** in it. Tap Current Date and set its format to **ISO 8601**.
+4. Add **Append to Text File**. Set the file path to `Scout/saves.txt` and turn on **Make New Line**. The file lives in iCloud Drive › Shortcuts, so your Mac sees it too.
+5. Add **Show Notification** with the text "Sent to The Scout."
+
+Now in any app: tap Share (on Instagram, the paper plane, then the share-sheet icon), then Send to Scout. The next time you make your edition, The Scout reads each link's public preview: who posted it and the caption or title. It never signs in to Instagram or anywhere else.
+
+The Scout looks for the file at `~/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents/Scout/saves.txt`. To keep it somewhere else, add `"saves_inbox": "/path/to/saves.txt"` to `scout-config.json` in your niche's folder (Documents › The Scout › your niche). Agents running `run.py` read the same key from `local.json`.
 
 ## Add outlets you trust
 

@@ -39,6 +39,10 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 | Chartmetric artist history (Spotify listeners and followers, TikTok, YouTube, Instagram) | streaming and social reach, with history | your own Chartmetric API key |
 | YouTube, Spotify artist data | switch on with your own free keys | varies |
 
+## Your saves
+
+Instagram doesn't let apps read saved posts, so The Scout reads a share-sheet inbox instead. Set up the **Send to Scout** iPhone Shortcut (steps in `START_HERE.md`), tap Share then Send to Scout on any post, and each edition gets a "What you saved this week" page plus one "why it works" post from your saves. `scripts/inbox.py` reads each link's public preview (Instagram link previews, YouTube and TikTok oEmbed, X through api.fxtwitter.com, Open Graph for web pages). It never signs in.
+
 ## Commands
 
 | Step | Command |

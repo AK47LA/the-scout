@@ -118,6 +118,8 @@ def build_basket(niche, names, interactive):
 
 WEEK_SLIDES = ("states", "move", "posts", "press")  # the pages every edition carries since the 28 Oct 2026 update
 X_STAMP = {"value": "{{brief.stamps.x_posts}}", "label": "X POSTS", "icon": "eye"}
+SAVES_SLIDE = {"id": "saves", "kind": "saves", "context": "states", "eyebrow": "YOUR SAVES", "headline": "What you saved this week.",
+               "voiceover": "{{brief.voice.saves}}", "source": "Source: links you sent to The Scout from your phone"}
 
 
 def template():
@@ -144,7 +146,7 @@ def build_edition(niche, mark, basket, has_x=False):
     return ed
 
 
-def refresh_edition(path, has_x):
+def refresh_edition(path, has_x, has_saves=False):
     """Every run: today's date on every page, and older editions get the weekly pages (in or out, the move, posts, press)."""
     ed = json.load(open(path))
     ed["date"] = datetime.date.today().strftime("%d %b %Y").upper()
@@ -162,6 +164,9 @@ def refresh_edition(path, has_x):
             it["value"] = (it.get("value") or "").replace("{{brief.counts.%s|thousands}}" % k, "{{brief.stamps.%s}}" % k)
     if cover is not None and has_x and not any("x_posts" in (it.get("value") or "") for it in cover.get("stamps_row", [])):
         cover["stamps_row"].append(dict(X_STAMP))
+    if has_saves and not any(s.get("kind") == "saves" for s in ed["slides"]):  # the page appears once the Shortcut has been used
+        at = next((i + 1 for i, s in enumerate(ed["slides"]) if s.get("kind") == "posts"), len(ed["slides"]))
+        ed["slides"].insert(at, dict(SAVES_SLIDE))
     json.dump(ed, open(path, "w"), ensure_ascii=False, indent=1)
 
 
@@ -203,13 +208,19 @@ def run(folder, media=True):
     if not (os.path.exists(basket) and os.path.exists(edition)):
         sys.exit(f"{folder} has no basket.json and edition.json; run setup first")
     say("\nPulling public data with history. The first run takes a few minutes; later runs add only the newest weeks.")
-    config = os.path.join(folder, "none.json")
+    config = os.path.join(folder, "scout-config.json")
+    prev = json.load(open(config)) if os.path.exists(config) else {}
+    cfg = {"root": folder}
+    if prev.get("saves_inbox"):  # the reader's own place for the Send to Scout file, kept across runs
+        cfg["saves_inbox"] = prev["saves_inbox"]
     wl = os.path.join(folder, "x-watchlist.json")
     has_x = os.path.exists(wl) and bool(json.load(open(wl)).get("accounts"))
     if has_x:  # X every week, no login: the niche's watchlist, read and compared week to week
-        config = os.path.join(folder, "scout-config.json")
-        json.dump({"root": folder, "x_watchlist": "x-watchlist.json", "x_public_dir": "x/{date}", "x_history": "x"}, open(config, "w"), indent=1)
-    refresh_edition(edition, has_x)
+        cfg.update({"x_watchlist": "x-watchlist.json", "x_public_dir": "x/{date}", "x_history": "x"})
+    json.dump(cfg, open(config, "w"), indent=1)
+    import inbox
+    saves_inbox = os.path.expanduser(cfg.get("saves_inbox") or inbox.DEFAULT_INBOX)
+    refresh_edition(edition, has_x, os.path.exists(saves_inbox))
     cmd = [sys.executable, "-I", os.path.join(HERE, "run.py"), "--config", config, "--out", folder,
            "--signals", basket, "--pull", "--headlines", "--slides", edition]
     if media and shutil.which("ffmpeg"):

@@ -608,6 +608,20 @@ def k_posts(s, c, ctx):
             f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">Starting points picked from this week\'s numbers. Check each receipt before you post, and make the take yours.</p>')
 
 
+def k_saves(s, c, ctx):
+    """From your saves: what you sent to The Scout from your phone this week (inbox.py), newest first."""
+    t, sv = ctx.t, _brief(ctx).get("saves") or {}
+    items = "".join(f'<div style="display:flex;flex-direction:column;gap:6px;padding:16px 0;border-top:1.5px solid {c["rule"]}">'
+                    f'<span style="font-size:24px;font-weight:700;line-height:1.2;{CLAMP1}">{html.escape(_cut(i.get("author") or "", 60))}</span>'
+                    f'<span style="font-size:24px;line-height:1.35;{CLAMP2}">{html.escape(i.get("text") or "")}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.06em;color:{c["muted"]}">{html.escape((i.get("site") or "").upper()[:30])}'
+                    f'{(" · SAVED " + html.escape(i["saved"])) if i.get("saved") else ""}</span></div>'
+                    for i in (sv.get("items") or [])[:5]) or _empty(c, ctx, "Nothing sent to The Scout this week. Tap Share on any post, then Send to Scout.")
+    return (head(s, c, ctx, 72) + f'<div style="display:flex;flex-direction:column;border-bottom:1.5px solid {c["rule"]}">{items}</div>'
+            + f'<p style="margin:0;font-family:{t["mono"]};font-size:15px;line-height:1.6;color:{c["muted"]}">'
+              f'Links you shared to The Scout this week. Instagram doesn\'t let apps read saves, so tap Share, then Send to Scout, instead of Save.</p>')
+
+
 def k_press(s, c, ctx):
     """What the press wrote this week: headline and outlet counts, the names it wrote about most, the stories (headlines.py)."""
     t, p = ctx.t, _brief(ctx).get("press") or {}
@@ -850,7 +864,7 @@ def k_take(s, c, ctx):
 
 KIND = {"take": k_take, "take_cover": k_take_cover, "story": k_story, "receipts": k_receipts, "signal": k_signal, "signal_cover": k_signal_cover, "backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
         "radar": k_radar, "image_grid": k_image_grid, "metric_chart": k_metric_chart, "groups": k_groups,
-        "tests": k_tests, "quote": k_quote, "states": k_states, "move": k_move, "posts": k_posts, "press": k_press}
+        "tests": k_tests, "quote": k_quote, "states": k_states, "move": k_move, "posts": k_posts, "press": k_press, "saves": k_saves}
 
 OVERFLOW_JS = """<script>document.fonts.ready.then(function(){var r=document.getElementById('frame');var bad=r.scrollHeight>r.clientHeight+1||r.scrollWidth>r.clientWidth+1;
 document.documentElement.setAttribute('data-overflow',bad?'yes':'no');document.documentElement.setAttribute('data-fonts',Array.from(document.fonts).some(function(f){return f.family.replace(/["']/g,'')==='__DISPLAY__'&&f.status==='loaded';})?'ok':'fallback');});</script>"""

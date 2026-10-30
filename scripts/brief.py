@@ -2,6 +2,7 @@
 
   python3 brief.py OUT.json [--states states-signals.json] [--states states-x.json] [--headlines headlines.json]
                             [--x-report report.json] [--basket basket.json] [--watchlist x-watchlist.json] [--x-weeks N]
+                            [--saves saves.json]
 
 Built only from this run's measured files: trendstate.py states, headlines.py, xpublic.py report. Every line keeps the
 number it rests on. The move and the four posts are starting points picked by fixed rules from those numbers; the take
@@ -59,7 +60,7 @@ def first_post(posts):
 X_WEEKS_NEEDED = 4  # X history starts at the first pull, so early weeks look like jumps; X joins in or out after four weekly pulls
 
 
-def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_weeks=0, watchlist=None):
+def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_weeks=0, watchlist=None, saves=None):
     today = today or datetime.date.today()
     rows = [r for s in states for r in s.get("rows", [])]
     accounts = {(a.get(k) or "").lower() for a in (watchlist or {}).get("accounts", []) for k in ("handle", "name")} - {""}
@@ -149,13 +150,23 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
                 continue
             posts.append({"kind": "REACT", "title": f"My read on: {short(h['title'], 90)}", "say": f"react to this week's {h['outlet']} story",
                           "first_line": "This week's story, and what it means for you.", "receipt": f"{h['outlet']}, {h['published'][:10]}"})
+    # From your saves: one thing you sent to The Scout this week, as a "why it works" post (English-script previews only)
+    sv = saves or {}
+    kept = [i for i in sv.get("items", []) if i.get("outcome") == "ok" and i.get("text") and not CJK.search(i["text"])]
+    if kept:
+        s0 = kept[0]
+        who = s0.get("author") or s0.get("site") or "this"
+        posts.insert(1 if posts else 0, {"kind": "FROM YOUR SAVES", "title": f"Why this works: “{short(s0['text'], 80)}”",
+                                         "say": f"break down why one of the things you saved works",
+                                         "first_line": "I saved this. Here's why it works.",
+                                         "receipt": f"{who} on {s0.get('site') or 'the web'}" + (f", saved {s0['saved_at'][:10]}" if s0.get("saved_at") else "")})
     posts = posts[:4]
 
     press_top = ([h for h in ranked if h.get("names")] or ranked)[:5]
     # a name whose search hit the 100 cap can't be ranked against the others: list it first, marked as "100+"
     most_named = [[n, k, n in capped] for n, k in sorted(by_name.items(), key=lambda kv: (kv[0] not in capped, -kv[1])) if k][:3]
     counts = {"headlines": hl.get("read", 0), "outlets": hl.get("outlets", 0), "x_posts": xr.get("recent_posts", 0),
-              "names": len((basket or {}).get("entities", []))}
+              "names": len((basket or {}).get("entities", [])), "saves": sv.get("read", 0)}
     feeds = hl.get("feeds") or []
     hl_state = "not read" if headlines is None else ("failed" if feeds and all(f.get("outcome") != "ok" for f in feeds) else "ok")
     x_state = "not read" if x_report is None else "ok"
@@ -177,6 +188,9 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
     states_v += (f"Going out: {names(went_out)}." if went_out else "Nothing went out.")
     return {"made_at": today.isoformat(), "date": today.strftime("%d %b %Y").upper(), "counts": counts, "stamps": stamps,
             "headlines_state": hl_state, "capped": sorted(capped),
+            "saves": {"count": sv.get("read", 0), "found": bool(sv.get("found")),
+                      "items": [{"author": i.get("author") or i.get("site"), "text": short(i["text"], 140), "site": i.get("site"),
+                                 "saved": (i.get("saved_at") or "")[:10]} for i in kept[:5]]},
             "came_in": came_in, "peaking": peaking, "went_out": went_out, "saturated": saturated[:4],
             "move": move, "posts": posts, "x_note": x_note,
             "press": {"read": counts["headlines"], "outlets": counts["outlets"], "most_named": most_named,
@@ -184,6 +198,8 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
             "voice": {"cover": cover, "states": states_v, "move": move["line"] + " " + move["why"],
                       # quoted headlines and X posts stay on the page, never in the narration: their words aren't ours to say
                       "posts": first_post(posts),
+                      "saves": (f"From your saves: {sv.get('read', 0):,} things you sent to The Scout this week." if sv.get("read") else
+                                "Nothing sent to The Scout this week. Share any post to Send to Scout and it shows up here."),
                       "press": (f"The press wrote most about {most_named[0][0]} this week." if most_named and not most_named[0][2] else
                                 f"The press wrote about {most_named[0][0]} at least {most_named[0][1]:,} times this week." if most_named else
                                 f"{counts['headlines']:,} headlines this week from {counts['outlets']:,} outlets.")},
@@ -200,7 +216,7 @@ def main():
     states = [s for s in (load(p) for p in get("--states")) if s]
     first = lambda k: (get(k) or [None])[0]
     res = build(states, load(first("--headlines")), load(first("--x-report")), load(first("--basket")),
-                x_weeks=int(first("--x-weeks") or 0), watchlist=load(first("--watchlist")))
+                x_weeks=int(first("--x-weeks") or 0), watchlist=load(first("--watchlist")), saves=load(first("--saves")))
     json.dump(res, open(out, "w"), indent=1, ensure_ascii=False)
     print(f"brief: in {[r['name'] for r in res['came_in']]}, out {[r['name'] for r in res['went_out']]}; move: {res['move']['line']}")
 

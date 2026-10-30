@@ -286,6 +286,52 @@ def weekly_pages(tmp, F, data):
     kb = brief.build([], kr, None, None)
     check("a headline in Korean script stays off the page", all("위" not in h["title"] for h in kb["press"]["top"])
           and all("위" not in p["title"] for p in kb["posts"]), kb["press"]["top"])
+    import inbox  # noqa: E402
+    lines = ("2026-10-27T09:15:00-07:00 https://www.instagram.com/reel/AAA111/?igsh=xyz\n"
+             "https://www.instagram.com/reel/AAA111/\n"
+             "2026-10-29 https://x.com/someone/status/123\n"
+             "2026-09-01 https://www.youtube.com/watch?v=old\n"
+             "Look at this https://example.com/story?utm_source=ig\n")
+    links = inbox.parse(lines)
+    check("inbox keeps one item per link, dropping tracking parameters", [l["url"] for l in links] ==
+          ["https://instagram.com/reel/AAA111", "https://x.com/someone/status/123", "https://youtube.com/watch?v=old", "https://example.com/story"],
+          [l["url"] for l in links])
+    ig_page = ('<meta property="og:title" content="Carmen Vicente on Instagram: &quot;What are the non-technical skills you try to hone?&quot;">'
+               '<meta property="og:description" content="60K likes, 188 comments - carmscrolls on October 26, 2026: &quot;What are...&quot;">')
+    ig = inbox.instagram(ig_page)
+    check("inbox reads an Instagram link preview", ig["author"] == "@carmscrolls" and ig["text"].startswith("What are the non-technical")
+          and ig["posted"] == "October 26, 2026", ig)
+    ip = os.path.join(tmp, "saves.txt")
+    open(ip, "w").write(lines)
+
+    def fake(url, ua=None):
+        if "instagram.com" in url:
+            return ig_page
+        if "fxtwitter" in url:
+            return json.dumps({"tweet": {"text": "A post on X", "author": {"screen_name": "someone"}}})
+        if "youtube.com/oembed" in url:
+            return json.dumps({"title": "Old video", "author_name": "Someone"})
+        raise OSError("offline")
+    res = inbox.run(ip, 7, seen=[], now=dt.datetime(2026, 10, 30, 12, tzinfo=dt.timezone.utc), fetch=fake)
+    got = {i["url"]: i["outcome"] for i in res["items"]}
+    check("inbox reads this week's links, skips old dated ones, records a failed preview", res["read"] == 3
+          and "https://youtube.com/watch?v=old" not in got and got["https://example.com/story"] == "failed"
+          and got["https://instagram.com/reel/AAA111"] == "ok", got)
+    res2 = inbox.run(ip, 7, seen=["https://example.com/story"], now=dt.datetime(2026, 10, 30, 12, tzinfo=dt.timezone.utc), fetch=fake)
+    check("inbox doesn't report an undated link twice", "https://example.com/story" not in {i["url"] for i in res2["items"]})
+    check("inbox says plainly when there's no inbox yet", inbox.run(os.path.join(tmp, "none.txt"))["found"] is False)
+    res["items"].append({"url": "u", "site": "Instagram", "author": "@kr", "text": "위버스 한국어", "outcome": "ok"})
+    bs = brief.build([], hl, None, None, saves=res)
+    check("brief turns a save into a why-it-works post", any(p["kind"] == "FROM YOUR SAVES" for p in bs["posts"]) and bs["saves"]["count"] == 3
+          and "3 things" in bs["voice"]["saves"], bs["posts"])
+    check("brief keeps saves in Korean script off the page", all("위" not in i["text"] for i in bs["saves"]["items"]))
+    saves_slide = dict(scout.SAVES_SLIDE)
+    probs, _ = copycheck.check({"slides": [saves_slide]}, dict(data, brief=bs, radar_gate=gate), False)
+    check("the saves page passes the copy check", probs == [], probs)
+    for th in (render.THEME, render.KAIJU):
+        ctx = render.Ctx(dict(th), dict(data, brief=bs), {}, {"brand": "THE SCOUT", "series": "TEST", "date": "TODAY", "mark": "M"})
+        h = render.page(saves_slide, 3, 8, ctx, ctx.deck)
+        check(f"render builds the saves page ({'poster' if th is render.KAIJU else 'plain'})", "@carmscrolls" in h and "SAVED 2026-10-27" in h, h[h.find("YOUR SAVES"):][:1500])
     rss_only = brief.build([], hl, None, {"entities": [{"name": "Katseye"}], "outlets": [{"rss": "https://p.example/feed"}]})
     check("brief takes an outlet given only as a feed address", rss_only["posts"] is not None)
     down = brief.build([], dict(failing, feeds=[{"feed": "niche: Music", "outcome": "failed"}]), None, None)
@@ -368,6 +414,9 @@ def weekly_pages(tmp, F, data):
     check("refresh adds the weekly pages to an older edition", [s["kind"] for s in ed["slides"]][:5] == ["cover", "states", "move", "posts", "press"],
           [s["kind"] for s in ed["slides"]])
     check("refresh adds the X count to the cover when X is read", any("x_posts" in i["value"] for i in ed["slides"][0]["stamps_row"]))
+    scout.refresh_edition(ep, has_x=True, has_saves=True)
+    kinds = [s["kind"] for s in json.load(open(ep))["slides"]]
+    check("refresh adds the saves page after posts once the Shortcut is used", kinds.index("saves") == kinds.index("posts") + 1, kinds)
     json.dump({"date": "27 OCT 2026", "slides": [{"id": "cover", "kind": "cover", "stamps_row": [
         {"value": "{{brief.counts.headlines|thousands}}", "label": "HEADLINES"}]}]}, open(ep, "w"))
     scout.refresh_edition(ep, has_x=False)

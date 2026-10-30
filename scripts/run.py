@@ -22,7 +22,7 @@ def defaults_from(config_path):
     root = os.path.expanduser(cfg.get("root", os.path.dirname(os.path.abspath(config_path))))
     out = {}
     for k in ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
-              "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords"):
+              "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords", "saves_inbox"):
         if cfg.get(k):
             v = os.path.expanduser(cfg[k].replace("{date}", datetime.date.today().isoformat()))
             out[k] = v if os.path.isabs(v) else os.path.join(root, v)
@@ -128,6 +128,14 @@ def main():
         rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "headlines.py"), a.signals, os.path.join(a.out, "headlines.json")])
         summary["steps"]["headlines"] = {"exit": rc, "file": os.path.join(a.out, "headlines.json")}
 
+    # 2b++. What you sent to The Scout from your phone with the Send to Scout share-sheet Shortcut (Instagram, TikTok, X, links)
+    import inbox as inbox_mod
+    inbox_path = os.path.expanduser(d.get("saves_inbox") or inbox_mod.DEFAULT_INBOX)
+    if os.path.exists(inbox_path):
+        rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "inbox.py"), inbox_path, os.path.join(a.out, "saves.json"),
+                              "--seen", os.path.join(a.out, "saves-seen.json")])
+        summary["steps"]["saves"] = {"exit": rc, "file": os.path.join(a.out, "saves.json")}
+
     # 2c. Calls: resolve against the benchmark press, feed hits into the ledger
     if a.calls and a.outlets and os.path.exists(a.calls):
         import calls as calls_mod
@@ -192,12 +200,13 @@ def main():
             summary["steps"]["x_keywords"] = {"exit": rc, "file": d["x_keywords"]}
 
     # 2e. The week in one place: in and out, the move, four posts, the press (from this run's measured files only)
-    if a.signals or a.headlines:
+    if a.signals or a.headlines or os.path.exists(inbox_path):
         xo = d.get("x_public_dir") or os.path.join(a.out, "x")
         cmd = [sys.executable, "-I", os.path.join(HERE, "brief.py"), os.path.join(a.out, "brief.json")]
         def this_run(p):  # a file left by an earlier run would put last week's numbers on this week's pages
             return os.path.exists(p) and os.path.getmtime(p) >= t0
-        for name, flag in (("states-signals.json", "--states"), ("states-x.json", "--states"), ("headlines.json", "--headlines")):
+        for name, flag in (("states-signals.json", "--states"), ("states-x.json", "--states"), ("headlines.json", "--headlines"),
+                           ("saves.json", "--saves")):
             if this_run(os.path.join(a.out, name)):
                 cmd += [flag, os.path.join(a.out, name)]
         if d.get("x_watchlist") and this_run(os.path.join(xo, "report.json")):
