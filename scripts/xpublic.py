@@ -91,8 +91,25 @@ def pull(watchlist, out, pages=2, workers=4):
     print(f"{sum(read.values())} new posts from {len(read)} of {len(wl['accounts'])} accounts; unreadable: {failed}")
 
 
+LEAD_VERBS = {"play", "start", "watch", "get", "join", "read", "see", "check", "follow", "listen", "stream", "buy", "try", "meet",
+              "us", "go", "let", "stop", "keep", "take", "give", "find", "learn", "build", "deploy", "drop", "pre-save", "presave"}
+CAL = re.compile(r"^(mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b", re.I)
+
+
+def real_name(n):
+    """A name worth tracking: one line, not a date, not a shouted headline tag, not just ordinary words (unless it has a version number)."""
+    if "\n" in n or n in SKIP_NAMES or len(n) <= 4 or CAL.match(n):
+        return False
+    words = re.findall(r"[A-Za-z0-9.'+-]+", n)
+    if n.isupper() and not any(ch.isdigit() for ch in n) and len(words) <= 3:
+        return False  # JUST IN, OUT NOW, BREAKING NEWS
+    if words and (words[0].lower() in terms.STOP or words[0].lower() in LEAD_VERBS):
+        return False  # All Time, Play Rocky, US Certifications, Start Doing...: phrases, not names
+    return True
+
+
 def names(text):
-    return {m.group(0).strip(" .") for m in NAME.finditer(text) if m.group(0) not in SKIP_NAMES and len(m.group(0)) > 4}
+    return {n for n in (m.group(0).strip(" .") for m in NAME.finditer(text)) if real_name(n)}
 
 
 def report(out, hours=72, history=None):
@@ -101,6 +118,8 @@ def report(out, hours=72, history=None):
     for d in sorted(set(earlier)):
         if os.path.dirname(os.path.abspath(d)) != os.path.abspath(out):
             rows += [json.loads(l) for l in open(d)]
+    rows = [dict(r, id=r.get("id") or (re.search(r"/status/(\d+)", r.get("url") or "") or [None, r.get("url")])[1]) for r in rows]
+    rows = [r for r in rows if r.get("id") and r.get("posted_at") and "metrics" in r]  # signed-in pass rows carry other fields
     uniq = {r["id"]: r for r in rows if not r.get("reposted_by")}
     now = datetime.datetime.now(datetime.timezone.utc)
     cut = (now - datetime.timedelta(hours=hours)).isoformat()

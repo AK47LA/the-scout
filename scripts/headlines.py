@@ -14,6 +14,10 @@ import xml.etree.ElementTree as ET
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) TheScout/1.0 (personal feed reader; read-only)"}
 GNEWS = "https://news.google.com/rss/search?{}"
 GNEWS_CAP = 100  # Google News returns at most 100 items per search, so a name at 100 has a count that is a floor
+# Fan and social platforms that Google News lists beside the press. Their posts aren't coverage (and arrive cut short,
+# often in several languages), so they are counted apart, never as headlines. An outlet feed the reader added is kept.
+PLATFORMS = {"weverse", "facebook", "instagram", "tiktok", "youtube", "x", "twitter", "reddit", "threads", "linkedin",
+             "pinterest", "tumblr", "weibo", "douyin", "bilibili"}
 
 
 def fetch(url, timeout=25):
@@ -51,6 +55,8 @@ def parse(xml_bytes, outlet=None):
         name = outlet or (src.text.strip() if src is not None and src.text else None)
         if not outlet and name and title.endswith(" - " + name):
             title = title[: -len(" - " + name)].strip()
+        if name and name.startswith(("http://", "https://")):  # an outlet with no name arrives as its address
+            name = re.sub(r"^https?://(www\.)?", "", name).rstrip("/")
         items.append({"title": title, "outlet": name or "unknown", "url": (it.findtext("link") or "").strip(),
                       "published": when(it.findtext("pubDate") or "")})
     atom = "{http://www.w3.org/2005/Atom}"
@@ -87,7 +93,7 @@ def run(basket, days=7, now=None, fetcher=fetch):
     for o in basket.get("outlets", []):
         if o.get("rss"):
             feeds.append((o.get("name") or o["rss"], f"outlet: {o.get('name') or o['rss']}", o["rss"], o.get("name") or o["rss"]))
-    seen, kept, receipts, capped = set(), [], [], []
+    seen, kept, receipts, capped, platform = set(), [], [], [], collections.Counter()
     for label, what, url, outlet in feeds:
         try:
             got = parse(fetcher(url), outlet)
@@ -103,6 +109,9 @@ def run(basket, days=7, now=None, fetcher=fetch):
             if k in seen:
                 continue
             seen.add(k)
+            if outlet is None and i["outlet"].lower() in PLATFORMS:
+                platform[i["outlet"]] += 1
+                continue
             kept.append(i)
         time.sleep(0.6)
     pats = {n: re.compile(r"(?<![\w])" + re.escape(n) + r"(?![\w])", re.I) for n in names}
@@ -114,11 +123,13 @@ def run(basket, days=7, now=None, fetcher=fetch):
     outlets = collections.Counter(i["outlet"] for i in kept)
     return {"generated_at": now.isoformat(timespec="seconds"), "window_days": days, "niche": niche,
             "read": len(kept), "outlets": len(outlets), "top_outlets": outlets.most_common(10),
-            "by_name": {n: by_name.get(n, 0) for n in names}, "capped": capped,
+            "by_name": {n: by_name.get(n, 0) for n in names}, "capped": capped, "platform_posts": dict(platform),
             "headlines": [dict(i, published=i["published"].isoformat(timespec="minutes")) for i in kept[:60]],
             "feeds": receipts,
             "note": "Headlines from the last %d days, one per story title, from Google News search and any outlet feeds in the basket. "
-                    "A count is coverage, not popularity. Names in 'capped' hit Google News's 100-item limit, so their counts are floors." % days}
+                    "A count is coverage, not popularity. Names in 'capped' hit Google News's 100-item limit, so their counts are floors. "
+                    "Fan and social platform posts Google News lists (Weverse, Facebook and the like) are counted in "
+                    "'platform_posts', not as headlines." % days}
 
 
 def main():

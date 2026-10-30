@@ -50,11 +50,28 @@ def short(s, n):
     return s if len(s) <= n else s[: n - 1].rsplit(" ", 1)[0] + "…"
 
 
+def clipped(title):
+    """A title the feed cut short: a quote or bracket opened and never closed ('"Unloveu" (Live f')."""
+    return (title.count('"') % 2 == 1 or title.count("“") != title.count("”")
+            or title.count("(") > title.count(")") or title.count("[") > title.count("]"))
+
+
+def spread(items, n):
+    """Up to n headlines, one per outlet first, then the rest in their order."""
+    first, outlets = [], set()
+    for h in items:
+        if h["outlet"] not in outlets:
+            outlets.add(h["outlet"])
+            first.append(h)
+    return (first + [h for h in items if h not in first])[:n]
+
+
 def first_post(posts):
     if not posts:
         return "No posts to suggest from this week's numbers."
     say = posts[0].get("say") or posts[0]["title"]
-    return "Four posts to make. First: " + say + ("" if say[-1:] in ".?!" else ".")
+    count = {1: "One post", 2: "Two posts", 3: "Three posts"}.get(len(posts), "Four posts")
+    return f"{count} to make. First: " + say + ("" if say[-1:] in ".?!" else ".")
 
 
 X_WEEKS_NEEDED = 4  # X history starts at the first pull, so early weeks look like jumps; X joins in or out after four weekly pulls
@@ -131,13 +148,16 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
         used.add(r["name"].lower())
     big = {o.get("name") or o.get("rss") for o in (basket or {}).get("outlets", [])} or {o for o, _ in (hl.get("top_outlets") or [])[:5]}
     # English only on the page (the copy check's rule): a headline or post in Chinese, Japanese or Korean script is left out
-    ranked = sorted((h for h in hl.get("headlines", []) if not CJK.search(h["title"])), key=lambda h: h["published"], reverse=True)
+    # and a title the feed cut short mid-phrase is left out too: half a headline isn't a receipt
+    ranked = sorted((h for h in hl.get("headlines", []) if not CJK.search(h["title"]) and not clipped(h["title"])),
+                    key=lambda h: h["published"], reverse=True)
     ranked = [h for h in ranked if h["outlet"] in big] + [h for h in ranked if h["outlet"] not in big]  # known outlets first, newest first
     stories = [h for h in ranked if h.get("names")] + [h for h in ranked if not h.get("names")]
     top_posts = sorted((p for lane in (xr.get("top_by_lane") or {}).values() for p in lane if not CJK.search(p.get("text") or "")),  # posts naming a tracked name first
                        key=lambda p: (not any(n in (p.get("text") or "").lower() for n in tracked), -((p.get("metrics") or {}).get("views") or 0)))[:1]
-    while len(posts) < 4 and (stories or top_posts):
-        if top_posts and (len(posts) % 2 == 1 or not stories):
+    outlets_used, held = set(), []  # a name or outlet already covered waits until nothing fresher is left
+    while len(posts) < 4 and (stories or top_posts or held):
+        if top_posts and (len(posts) % 2 == 1 or not (stories or held)):
             p = top_posts.pop(0)
             views = (p.get("metrics") or {}).get("views")
             posts.append({"kind": "REACT", "title": f"Answer {p['author']}: “{short(p.get('text'), 90)}”",
@@ -145,11 +165,15 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
                           "first_line": f"{p['author']} said it. Here's my read.",
                           "receipt": f"{p['author']} on X" + (f", {views:,} views" if views else "") + f", {p['posted_at'][:10]}"})
         else:
-            h = stories.pop(0)
-            if any(n.lower() in used for n in h.get("names", [])) and stories:
+            h = stories.pop(0) if stories else held.pop(0)
+            if stories and (any(n.lower() in used for n in h.get("names", [])) or h["outlet"] in outlets_used):
+                held.append(h)
                 continue
-            posts.append({"kind": "REACT", "title": f"My read on: {short(h['title'], 90)}", "say": f"react to this week's {h['outlet']} story",
+            say = "react to this week's story" if CJK.search(h["outlet"]) else f"react to this week's {h['outlet']} story"  # the narration stays English
+            posts.append({"kind": "REACT", "title": f"My read on: {short(h['title'], 90)}", "say": say,
                           "first_line": "This week's story, and what it means for you.", "receipt": f"{h['outlet']}, {h['published'][:10]}"})
+            used.update(n.lower() for n in h.get("names", []))
+            outlets_used.add(h["outlet"])
     # From your saves: one thing you sent to The Scout this week, as a "why it works" post (English-script previews only)
     sv = saves or {}
     kept = [i for i in sv.get("items", []) if i.get("outcome") == "ok" and i.get("text") and not CJK.search(i["text"])]
@@ -162,7 +186,7 @@ def build(states=(), headlines=None, x_report=None, basket=None, today=None, x_w
                                          "receipt": f"{who} on {s0.get('site') or 'the web'}" + (f", saved {s0['saved_at'][:10]}" if s0.get("saved_at") else "")})
     posts = posts[:4]
 
-    press_top = ([h for h in ranked if h.get("names")] or ranked)[:5]
+    press_top = spread([h for h in ranked if h.get("names")] + [h for h in ranked if not h.get("names")], 5)  # your names first
     # a name whose search hit the 100 cap can't be ranked against the others: list it first, marked as "100+"
     most_named = [[n, k, n in capped] for n, k in sorted(by_name.items(), key=lambda kv: (kv[0] not in capped, -kv[1])) if k][:3]
     counts = {"headlines": hl.get("read", 0), "outlets": hl.get("outlets", 0), "x_posts": xr.get("recent_posts", 0),

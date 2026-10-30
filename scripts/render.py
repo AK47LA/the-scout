@@ -30,7 +30,19 @@ KAIJU = dict(THEME, **{
     "texture": True, "extrude": True, "seals": True, "stamps": True, "display_scale": 1.0, "single_tone": True, "handmade": True,
     "image_filter": "sepia(0.16) saturate(0.92) contrast(1.04)", "body_weight": 500,
 })
-THEMES = {"scout": THEME, "kaiju": KAIJU}
+# The Scout's talking-head look (v10 video): night ink, pearl type, Instrument Serif with lit italics, Geist Mono labels.
+# Wrap words in *asterisks* to light them with the teal, gold and orchid gradient.
+LIT = dict(THEME, **{
+    "deep": "#0B1020", "navy": "#0B1020", "ice": "#EEF1F5", "mint": "#7FD1C2", "cyan": "#7FD1C2",
+    "amber": "#E2BE72", "amber_ink": "#E2BE72", "muted_dark": "#8A94A8", "muted_light": "#8A94A8", "orchid": "#D08FD0",
+    "panel_dark": "#141A2B", "paper": "#141A2B", "panel_light": "#141A2B", "callout_text": "#EEF1F5",
+    "card_shadow": "0 24px 60px rgba(0,0,0,0.5)", "cover_shadow": "0 30px 70px rgba(0,0,0,0.6)",
+    "display": "'Instrument Serif', Georgia, serif", "body": "'Geist', 'Helvetica Neue', sans-serif", "mono": "'Geist Mono', ui-monospace, monospace",
+    "fonts_url": "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap",
+    "single_tone": True, "glow": True, "display_scale": 1.22,
+    "lit": "linear-gradient(100deg,#7FD1C2 0%,#E2BE72 50%,#D08FD0 100%)",
+})
+THEMES = {"scout": THEME, "kaiju": KAIJU, "lit": LIT}
 SEALS = {"backtest": "BACKTEST", "calls": "CALLS", "registry": "EARLY MOVERS", "signal_board": "SIGNALS", "cover": "FIELD REPORT", "scorecard": "VERDICT", "day_bars": "JOURNAL", "source_bars": "SOURCES", "radar": "EVIDENCE",
          "image_grid": "PANEL", "metric_chart": "SIGNALS", "groups": "SIMPLIFY", "tests": "TESTS", "quote": "GIVEAWAY"}
 # Hand-printed look: worn type, wobbly ink lines, uneven coverage. Filters live once per page.
@@ -75,7 +87,7 @@ def rgba(hexc, a):
 def display_style(t, dark, size):
     """Offset-ink poster type for the kaiju theme; plain display type otherwise."""
     if not t.get("extrude"):
-        return f"font-size:{size}px;"
+        return f"font-size:{round(size * t.get('display_scale', 1))}px;"
     size = round(size * t.get("display_scale", 1))
     depth = max(4, round(size / 10))
     if dark:
@@ -87,6 +99,10 @@ def display_style(t, dark, size):
 
 
 def texture(t):
+    if t.get("glow"):  # light falling on night ink, as in the video
+        z = "position:absolute;inset:0;pointer-events:none;z-index:0;"
+        return (f'<div class="tx" aria-hidden="true" style="{z}background:radial-gradient(900px 620px at 92% -6%, rgba(29,106,112,0.42), transparent 70%),'
+                f'radial-gradient(760px 520px at -8% 104%, rgba(132,57,126,0.26), transparent 70%),radial-gradient(600px 400px at 60% 110%, rgba(168,133,60,0.16), transparent 70%)"></div>')
     if not t.get("texture"):
         return ""
     dark = GRAIN.format(f="0.62", seed="3", r="0.05", g="0.04", b="0.03", a="1.8")
@@ -111,6 +127,8 @@ class Ctx:
     def txt(self, s):
         out, _ = copycheck.resolve(s or "", self.data)
         out = html.escape(out).replace("\n", "<br>")
+        if self.t.get("lit"):
+            out = re.sub(r"[*]([^*]+)[*]", r'<span class="lit">\1</span>', out)
         # links stay clickable in the text PDF
         return re.sub(r"(https?://[^\s<]+[^\s<.,;:)])", r'<a href="\1" style="color:inherit;text-decoration:underline">\1</a>', out)
 
@@ -759,7 +777,7 @@ def k_receipts(s, c, ctx):
                     f'<span style="font-family:{t["mono"]};font-size:14px;font-weight:700;letter-spacing:0.08em;color:{c["muted"]}">{html.escape(lab)}</span>'
                     f'<span style="font-size:17px;line-height:1.4;word-break:break-all">{ctx.txt(txt)}</span></div>' for lab, txt in s.get("links", []))
     calls = f'<p style="margin:0;font-size:22px;line-height:1.45">{ctx.txt(s.get("calls", ""))}</p>' if s.get("calls") else ""
-    return head(s, c, ctx, 60) + f'<div style="display:flex;flex-direction:column;gap:16px">{calls}<div style="display:flex;flex-direction:column">{items}</div></div>'
+    return head(s, c, ctx, s.get("headline_size", 60)) + f'<div style="display:flex;flex-direction:column;gap:16px">{calls}<div style="display:flex;flex-direction:column">{items}</div></div>'
 
 
 def k_signal_cover(s, c, ctx):
@@ -768,6 +786,126 @@ def k_signal_cover(s, c, ctx):
     return (f'<div style="display:flex;flex-direction:column;gap:34px;margin-top:40px">'
             f'<span style="font-family:{t["mono"]};font-size:22px;font-weight:700;letter-spacing:0.2em;color:{c["accent"]}">{ctx.txt(s.get("eyebrow"))}</span>{lines}'
             f'<p style="margin:0;font-size:34px;line-height:1.4;max-width:860px">{ctx.txt(s.get("sub"))}</p></div>')
+
+
+def pic(t, f, w, h, credit="", pos="50% 30%", radius=10):
+    """A real picture from the source, with its credit on it."""
+    cred = (f'<span style="position:absolute;left:10px;bottom:10px;font-family:{t["mono"]};font-size:13px;font-weight:600;letter-spacing:0.1em;'
+            f'padding:5px 9px;border-radius:4px;background:rgba(11,16,32,0.82);color:{t["ice"]}">{html.escape(credit)}</span>') if credit else ""
+    return (f'<div style="position:relative;width:{w}px;height:{h}px;flex:none;border-radius:{radius}px;overflow:hidden;box-shadow:{t["card_shadow"]};background:{t["panel_dark"]}">'
+            f'<img src="file://{html.escape(f)}" alt="{html.escape(credit)}" style="display:block;width:100%;height:100%;object-fit:cover;object-position:{pos}">{cred}</div>')
+
+
+def mini_bars(t, c, chart):
+    """A small bar chart: one bar per item, scaled to the biggest, its value written at the end."""
+    items = chart.get("items", [])
+    top = max((it["value"] for it in items), default=1) or 1
+    rows = "".join(f'<div style="display:grid;grid-template-columns:{chart.get("label_w", 150)}px minmax(0,1fr) {chart.get("value_w", 130)}px;gap:16px;align-items:center">'
+                   f'<span style="font-family:{t["mono"]};font-size:{chart.get("label_size", 15)}px;letter-spacing:0.06em;line-height:1.3;color:{c["muted"]}">{html.escape(it["label"])}</span>'
+                   f'<div style="height:{chart.get("bar_h", 18)}px;border-radius:99px;background:{rgba(t["ice"], 0.08)}"><div style="height:100%;width:{max(2, round(100 * it["value"] / top))}%;border-radius:99px;background:{t.get("lit", t["cyan"])}"></div></div>'
+                   f'<span style="font-family:{t["display"]};font-size:{chart.get("value_size", 34)}px;line-height:1;text-align:right">{html.escape(it.get("display", str(it["value"])))}</span></div>' for it in items)
+    title = f'<span style="font-family:{t["mono"]};font-size:15px;font-weight:600;letter-spacing:0.16em;color:{t["amber"]}">{html.escape(chart.get("title", ""))}</span>' if chart.get("title") else ""
+    return f'<div style="display:flex;flex-direction:column;gap:{chart.get("gap", 12)}px">{title}{rows}</div>'
+
+
+def says(t, c, ctx, quotes, size=25):
+    """Who's saying it: each outlet in its own words, its headline as published."""
+    return "".join(f'<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px;padding:9px 0;border-top:1px solid {c["rule"]};align-items:baseline">'
+                   f'<span style="font-family:{t["mono"]};font-size:14px;font-weight:600;letter-spacing:0.12em;color:{t["cyan"]}">{html.escape(q["outlet"].upper())}</span>'
+                   f'<span style="font-family:{t["display"]};font-style:italic;font-size:{size}px;line-height:1.22">&ldquo;{ctx.txt(q["line"])}&rdquo;</span></div>' for q in quotes)
+
+
+def k_shift(s, c, ctx):
+    """One shift the culture press converged on: pictures from the pieces, the outlets' own headlines, why it matters, the move."""
+    t = ctx.t
+    imgs = s.get("images", [])[:3]
+    H = s.get("image_h", 380)
+    if len(imgs) >= 3:
+        mosaic = (f'<div style="display:flex;gap:14px">{pic(t, imgs[0]["file"], 560, H, imgs[0].get("credit", ""), imgs[0].get("pos", "50% 30%"))}'
+                  f'<div style="display:flex;flex-direction:column;gap:14px">{pic(t, imgs[1]["file"], 362, (H - 14) // 2, imgs[1].get("credit", ""), imgs[1].get("pos", "50% 30%"))}'
+                  f'{pic(t, imgs[2]["file"], 362, (H - 14) // 2, imgs[2].get("credit", ""), imgs[2].get("pos", "50% 30%"))}</div></div>')
+    elif len(imgs) == 2:
+        mosaic = '<div style="display:flex;gap:14px">' + "".join(pic(t, im["file"], 461, H, im.get("credit", ""), im.get("pos", "50% 30%")) for im in imgs) + "</div>"
+    elif imgs:
+        side = mini_bars(t, c, s["chart"]) if s.get("chart") else ""
+        w = s.get("image_w", 460) if side else 936
+        mosaic = (f'<div style="display:flex;gap:34px;align-items:center">{pic(t, imgs[0]["file"], w, H, imgs[0].get("credit", ""), imgs[0].get("pos", "50% 30%"))}'
+                  + (f'<div style="flex:1;min-width:0">{side}</div>' if side else "") + "</div>")
+    else:
+        mosaic = mini_bars(t, c, s["chart"]) if s.get("chart") else ""
+    q = says(t, c, ctx, s.get("says", []), s.get("says_size", 25))
+    rows = "".join(f'<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px;padding:11px 0;border-top:1px solid {c["rule"]}">'
+                   f'<span style="font-family:{t["mono"]};font-size:14px;font-weight:700;letter-spacing:0.12em;color:{t["amber"] if lab.startswith(("THE MOVE", "YOUR TAKE", "MOVE")) else c["muted"]};padding-top:4px">{html.escape(lab)}</span>'
+                   f'<span style="font-size:{s.get("row_size", 23)}px;line-height:1.38">{ctx.txt(txt)}</span></div>' for lab, txt in s.get("rows", []))
+    return (head(s, c, ctx, s.get("headline_size", 64)) + f'<div style="display:flex;flex-direction:column;gap:20px">{mosaic}'
+            + (f'<div style="display:flex;flex-direction:column">{q}</div>' if q else "")
+            + f'<div style="display:flex;flex-direction:column;border-bottom:1px solid {c["rule"]}">{rows}</div></div>')
+
+
+def k_people(s, c, ctx):
+    """Names to reach, staged by real social reach, each with a picture from the piece that named them."""
+    t = ctx.t
+    col = {"EARLY": t["amber"], "BREAKING": t.get("orchid", t["amber"]), "NEW BAND": t["cyan"]}
+    cards = "".join(f'<div style="display:flex;gap:24px;padding:15px 0;border-top:1px solid {c["rule"]};align-items:center">'
+                    f'{pic(t, p["file"], 220, 146, "", p.get("pos", "50% 30%"), 8)}'
+                    f'<div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1">'
+                    f'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:{t["display"]};font-size:40px;line-height:1">{ctx.txt(p["name"])}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:13px;font-weight:700;letter-spacing:0.14em;padding:4px 9px;border-radius:4px;border:1.5px solid {col.get(p["stage"], c["muted"])};color:{col.get(p["stage"], c["muted"])}">{html.escape(p["stage"])}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.04em;color:{c["muted"]}">{ctx.txt(p.get("numbers", ""))}</span></div>'
+                    f'<span style="font-size:21px;line-height:1.36">{ctx.txt(p["line"])}</span>'
+                    f'<span style="font-family:{t["mono"]};font-size:13px;letter-spacing:0.08em;color:{t["cyan"]}">{html.escape(p.get("src", "").upper())}</span></div></div>' for p in s.get("people", []))
+    return head(s, c, ctx, s.get("headline_size", 64)) + f'<div style="display:flex;flex-direction:column;border-bottom:1px solid {c["rule"]}">{cards}</div>'
+
+
+def k_inout(s, c, ctx):
+    """What came in and what went out, as the culture press tells it, each line with who said so."""
+    t = ctx.t
+
+    def side(title, items, lit):
+        th = s.get("thumb", 76)
+        li = "".join(f'<div style="display:flex;gap:14px;align-items:center;padding:9px 0;border-top:1px solid {c["rule"]}">'
+                     + (pic(t, i["file"], th, th, "", i.get("pos", "50% 40%"), 8) if i.get("file") else "")
+                     + f'<div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:{s.get("item_size", 23)}px;line-height:1.28;font-weight:500">{ctx.txt(i["text"])}</span>'
+                     f'<span style="font-family:{t["mono"]};font-size:12px;letter-spacing:0.08em;color:{c["muted"]}">{html.escape(i.get("src", "").upper())}</span></div></div>' for i in items)
+        hs = s.get("side_size", 96)
+        hd = (f'<span class="lit" style="font-family:{t["display"]};font-size:{hs}px;line-height:1">{title}</span>' if lit else
+              f'<span style="font-family:{t["display"]};font-style:italic;font-size:{hs}px;line-height:1;color:{c["muted"]}">{title}</span>')
+        return f'<div style="display:flex;flex-direction:column;min-width:0">{hd}<div style="display:flex;flex-direction:column;margin-top:10px;border-bottom:1px solid {c["rule"]}">{li}</div></div>'
+    return (head(s, c, ctx, s.get("headline_size", 60)) + f'<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:44px">'
+            f'{side("In", s.get("in", []), True)}{side("Out", s.get("out", []), False)}</div>')
+
+
+def k_chart(s, c, ctx):
+    """One chart page: bars from the panel itself, a strip of the pictures behind them, then what the numbers say."""
+    t = ctx.t
+    note = f'<p style="margin:0;font-size:24px;line-height:1.45;color:{c["muted"]}">{ctx.txt(s.get("note"))}</p>' if s.get("note") else ""
+    strip = ""
+    if s.get("images"):
+        n = len(s["images"])
+        strip = '<div style="display:flex;gap:12px">' + "".join(pic(t, im["file"], (936 - 12 * (n - 1)) // n, s.get("strip_h", 150), im.get("credit", ""), im.get("pos", "50% 30%"), 8) for im in s["images"]) + "</div>"
+    return head(s, c, ctx, s.get("headline_size", 64)) + f'<div style="display:flex;flex-direction:column;gap:34px">{mini_bars(t, c, s["chart"])}{strip}{note}</div>'
+
+
+def k_frame_cover(s, c, ctx):
+    """Cover: headline, what's inside on the left, and on the right a video still or a column of the edition's own pictures."""
+    t = ctx.t
+    W, H = s.get("frame_w", 380), s.get("frame_h", 676)
+    if s.get("stack"):  # a column of the edition's own pictures
+        n = len(s["stack"]); h = (H - 12 * (n - 1)) // n
+        side = f'<div style="display:flex;flex-direction:column;gap:12px">' + "".join(pic(t, im["file"], W, h, im.get("credit", ""), im.get("pos", "50% 40%"), 10) for im in s["stack"]) + "</div>"
+    else:
+        f = s["frame"]
+        side = pic(t, f["file"], W, H, f.get("credit", ""), f.get("pos", "50% 0%"), 22)
+    toc = "".join(f'<div style="display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:10px 0;border-top:1px solid {c["rule"]};align-items:baseline">'
+                  f'<span style="font-family:{t["mono"]};font-size:15px;letter-spacing:0.1em;color:{t["amber"]}">{i:02d}</span>'
+                  f'<span style="font-family:{t["display"]};font-size:{s.get("toc_size", 30)}px;line-height:1.12">{ctx.txt(x)}</span></div>' for i, x in enumerate(s.get("contents", []), 1))
+    tag = (f'<span style="align-self:flex-start;font-family:{t["mono"]};font-size:16px;font-weight:600;letter-spacing:0.16em;padding:9px 14px;border-radius:4px;'
+           f'border:1.5px solid {t["amber"]};color:{t["amber"]}">{ctx.txt(s.get("tag"))}</span>') if s.get("tag") else ""
+    return (f'<div style="display:flex;flex-direction:column;gap:26px">{tag}<h1 style="margin:0;font-family:{t["display"]};font-weight:400;{display_style(t, c["dark"], s.get("headline_size", 96))}line-height:0.98;letter-spacing:-0.01em;text-wrap:balance">{ctx.txt(s.get("headline"))}</h1></div>'
+            f'<div style="display:flex;gap:40px;align-items:flex-end">'
+            f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:22px"><p style="margin:0;font-size:24px;line-height:1.4;color:{c["muted"]}">{ctx.txt(s.get("sub"))}</p>'
+            f'<div style="display:flex;flex-direction:column;border-bottom:1px solid {c["rule"]}">{toc}</div></div>'
+            f'{side}</div>')
 
 
 def png_size(path):
@@ -864,10 +1002,19 @@ def k_take(s, c, ctx):
 
 KIND = {"take": k_take, "take_cover": k_take_cover, "story": k_story, "receipts": k_receipts, "signal": k_signal, "signal_cover": k_signal_cover, "backtest": k_backtest, "calls": k_calls, "registry": k_registry, "signal_board": k_signal_board, "cover": k_cover, "scorecard": k_scorecard, "day_bars": k_day_bars, "source_bars": k_source_bars,
         "radar": k_radar, "image_grid": k_image_grid, "metric_chart": k_metric_chart, "groups": k_groups,
-        "tests": k_tests, "quote": k_quote, "states": k_states, "move": k_move, "posts": k_posts, "press": k_press, "saves": k_saves}
+        "tests": k_tests, "quote": k_quote, "shift": k_shift, "people": k_people, "inout": k_inout, "chart": k_chart, "frame_cover": k_frame_cover,
+        "states": k_states, "move": k_move, "posts": k_posts, "press": k_press, "saves": k_saves}
 
 OVERFLOW_JS = """<script>document.fonts.ready.then(function(){var r=document.getElementById('frame');var bad=r.scrollHeight>r.clientHeight+1||r.scrollWidth>r.clientWidth+1;
 document.documentElement.setAttribute('data-overflow',bad?'yes':'no');document.documentElement.setAttribute('data-fonts',Array.from(document.fonts).some(function(f){return f.family.replace(/["']/g,'')==='__DISPLAY__'&&f.status==='loaded';})?'ok':'fallback');});</script>"""
+
+
+def brand_html(deck, t):
+    b = html.escape(deck.get("brand", "THE SCOUT"))
+    if t.get("lit"):  # the wordmark, as it sits behind the speaker in the video
+        lit = re.sub(r"[*]([^*]+)[*]", r'<span class="lit">\1</span>', b)  # kept outside the f-string so Python 3.9 (macOS default) can read it
+        return f'<span style="font-family:{t["display"]};font-size:44px;line-height:1">{lit}</span>'
+    return f'<span style="font-weight:700;font-size:26px;letter-spacing:0.16em">{b}</span>'
 
 
 def page(s, i, total, ctx, deck):
@@ -876,7 +1023,7 @@ def page(s, i, total, ctx, deck):
     t = ctx.t
     body = KIND[s["kind"]](s, c, ctx)
     hdr = (f'<div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:baseline;padding-bottom:22px;border-bottom:1.5px solid {c["rule"]}">'
-           f'<div style="display:flex;align-items:baseline;gap:14px"><span style="font-weight:700;font-size:26px;letter-spacing:0.16em">{html.escape(deck.get("brand", "THE SCOUT"))}</span>'
+           f'<div style="display:flex;align-items:baseline;gap:14px">{brand_html(deck, t)}'
            f'<span style="font-family:{t["mono"]};font-size:18px;letter-spacing:0.14em;color:{c["muted"]}">/ {html.escape(deck.get("series", "STRESS TEST"))}</span></div>'
            f'<span style="font-family:{t["mono"]};font-size:18px;letter-spacing:0.14em;color:{c["muted"]}">{html.escape(deck.get("date", ""))} · {i:02d}/{total:02d}</span></div>')
     seal = ""
@@ -898,7 +1045,8 @@ def page(s, i, total, ctx, deck):
                f'{html.escape(deck.get("mark", ""))}</div>')
     overflow_js = OVERFLOW_JS.replace("__DISPLAY__", t["display"].split(",")[0].strip(" '"))
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{html.escape(deck.get("brand", ""))} {i:02d}</title>'
-            f'<link rel="stylesheet" href="{t["fonts_url"]}"><style>body{{margin:0}}#frame>*:not(.tx){{position:relative;z-index:1}}</style></head><body>{HANDMADE_DEFS if t.get("handmade") else ""}'
+            f'<link rel="stylesheet" href="{t["fonts_url"]}"><style>body{{margin:0}}#frame>*:not(.tx){{position:relative;z-index:1}}*{{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+            f'.lit{{font-style:italic;background:{t.get("lit", "none")};-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .06em 0 .02em}}</style></head><body>{HANDMADE_DEFS if t.get("handmade") else ""}'
             f'<div id="frame" style="width:1080px;height:1350px;box-sizing:border-box;padding:60px 72px 56px;background:{c["bg"]};color:{c["fg"]};'
             f'font-family:{t["body"]};font-weight:{t.get("body_weight", 400)};display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative">{texture(t)}{hdr}{body}{ftr}{seal}</div>{overflow_js}</body></html>')
 

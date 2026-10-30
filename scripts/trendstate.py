@@ -10,10 +10,14 @@ States, judged on the latest complete week against the item's own history:
   FADING     under 40% of its peak and below its own four-week mean: going out
   GONE       under 10% of its peak
   STEADY     none of the above
+  ESTABLISHED  an item that would be NEW, JUST TRENDING or RISING but already had real attention more than 90 days ago
+             (Wikipedia pageviews back to 2015). Old things getting busier are not "in": they show apart, with the bump
+             kept as "buzz", and never on the In side of an edition. An item with no Wikipedia article stays as judged,
+             marked age "unverified" so the edition checks its launch date by hand.
 For X, a week is the posts by watchlist accounts that name the item; the current week is scaled to seven days.
 A state is attention, not adoption. Every row keeps its numbers so a reader can check the call.
 """
-import collections, datetime, json, os, re, sys
+import collections, datetime, json, os, re, sys, urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import signals  # noqa: E402
@@ -91,7 +95,7 @@ def from_x(post_files, names=None, minimum=3, today=None):
             r = json.loads(l)
             if not r.get("reposted_by"):
                 posts[r["id"]] = r
-    today = today or datetime.datetime.now(datetime.timezone.utc).date()
+    today = today or datetime.date.today()  # the reader's local date: a late-Sunday run in LA is already Monday in UTC
     this_monday = today - datetime.timedelta(days=today.weekday())
     scale = 7 / max(1, (today - this_monday).days + 1)
     counts = collections.defaultdict(collections.Counter)
@@ -122,7 +126,59 @@ def from_x(post_files, names=None, minimum=3, today=None):
     return rows
 
 
-ORDER = {"NEW": 0, "JUST TRENDING": 1, "RISING": 2, "PEAKING": 3, "STEADY": 4, "FADING": 5, "GONE": 6}
+AGE_DAYS = 90
+FRESH = ("NEW", "JUST TRENDING", "RISING")
+
+
+def wiki_first_seen(name, cache=None):
+    """The first month a name's Wikipedia article had real attention (3,000+ views, or 10% of its peak month), or None
+    when no article matches the name closely. Only a close title match counts, so a loose search never ages a new name."""
+    key = name.lower()
+    if cache is not None and key in cache:
+        return cache[key]
+    first = None
+    try:
+        hits, _ = signals.get_json("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+            {"action": "opensearch", "search": name, "limit": 3, "namespace": 0, "format": "json"}))
+        norm = lambda t: re.sub(r"\s*\(.*?\)$", "", t).strip().lower()
+        title = next((t for t in hits[1] if norm(t) == key), None)
+        if title:
+            end = datetime.date.today().replace(day=1).strftime("%Y%m%d")
+            pv, _ = signals.get_json("https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/"
+                                     + urllib.parse.quote(title.replace(" ", "_"), safe="") + f"/monthly/20150701/{end}")
+            items = pv.get("items", [])
+            peak = max((i["views"] for i in items), default=0)
+            bar = min(3000, 0.1 * peak) if peak else 0
+            month = next((i["timestamp"][:8] for i in items if bar and i["views"] >= bar), None)
+            first = {"title": title, "first_month": f"{month[:4]}-{month[4:6]}-01" if month else None, "peak_month_views": peak}
+    except Exception:
+        first = None
+    if cache is not None:
+        cache[key] = first
+    return first
+
+
+def age_gate(rows, lookup=wiki_first_seen, today=None, days=AGE_DAYS, cache=None):
+    """Re-label fresh-looking rows for items that are actually old. lookup(name, cache) returns {"first_month"} or None."""
+    today = today or datetime.date.today()
+    cut = (today - datetime.timedelta(days=days)).isoformat()
+    for r in rows:
+        if r["state"] not in FRESH:
+            continue
+        info = lookup(r["name"], cache)
+        if not info or not info.get("first_month"):
+            r["age"] = "unverified"
+            continue
+        r["first_seen"], r["age_source"] = info["first_month"], f"Wikipedia pageviews, {info.get('title')}"
+        if info["first_month"] < cut:
+            r["buzz"], r["state"] = r["state"], "ESTABLISHED"
+            r["age"] = "established"
+        else:
+            r["age"] = "new"
+    return rows
+
+
+ORDER = {"NEW": 0, "JUST TRENDING": 1, "RISING": 2, "PEAKING": 3, "ESTABLISHED": 4, "STEADY": 5, "FADING": 6, "GONE": 7}
 
 
 def main():
@@ -138,11 +194,17 @@ def main():
         rows = from_x(args[:-1], names, int(arg("--min", 3)))
     else:
         sys.exit(__doc__)
+    if "--no-age" not in sys.argv:  # old things getting busier are not new: check every fresh-looking row's age
+        cache_p = os.path.join(os.path.dirname(os.path.abspath(out)), "age-cache.json")
+        cache = json.load(open(cache_p)) if os.path.exists(cache_p) else {}
+        age_gate(rows, cache=cache)
+        json.dump(cache, open(cache_p, "w"), indent=1)
     rows.sort(key=lambda r: (ORDER[r["state"]], -(r.get("vs_prior4_pct") or 0)))
     json.dump({"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), "rule": __doc__.split("States,")[1].split("For X")[0].strip(),
                "rows": rows, "saturated": SATURATED}, open(out, "w"), indent=1, ensure_ascii=False)
     for r in rows:
-        print(f"  {r['state']:<14} {r['name'][:32]:<32} {r['source']:<11} now {r['value']:>10} prior4 {r['prior4_mean']:>10} peak% {r['pct_of_peak']}")
+        print(f"  {r['state']:<14} {r['name'][:32]:<32} {r['source']:<11} now {r['value']:>10} prior4 {r['prior4_mean']:>10} peak% {r['pct_of_peak']}"
+              + (f"  first seen {r['first_seen']}" if r.get("first_seen") else ("  age unverified" if r.get("age") == "unverified" else "")))
 
 
 if __name__ == "__main__":

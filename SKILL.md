@@ -61,7 +61,8 @@ The point is less noise, not more. Every edition opens with one page of at most 
 
 ## In or out
 
-Every edition says what is just trending and what is going out, not only what might come. `trendstate.py` puts every tracked item on one rule: NEW, JUST TRENDING, RISING, PEAKING, STEADY, FADING or GONE, judged on the latest complete week against its own history (X weeks are scaled when partial). Put a page near the front with what came in and what went out, with the numbers behind each call. X history builds week on week, so early editions will call too much NEW; check first-launch dates before saying new.
+Every edition says what is just trending and what is going out, not only what might come. `trendstate.py` puts every tracked item on one rule: NEW, JUST TRENDING, RISING, PEAKING, STEADY, FADING or GONE, judged on the latest complete week against its own history (X weeks are scaled when partial). Then an age gate: anything that looks new or rising but had real attention more than 90 days ago (Wikipedia pageviews back to 2015) becomes ESTABLISHED. An old name getting busier is never "in": show it apart as "established, buzzing" or leave it out, and never put it on the In side. A name with no Wikipedia article is marked age "unverified"; check its launch date before calling it new.
+Put a page near the front with what came in and what went out, with the numbers behind each call. X history builds week on week, so early editions will call too much NEW; check first-launch dates before saying new.
 
 ## Formats to steal
 

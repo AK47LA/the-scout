@@ -114,6 +114,7 @@ def plan(out, calls_p, registry_p, terms_p, tools_p, watch, max_pages, owner=Non
               "keep": "every trend shown: name, the category line above it, the post count if shown"},
              {"id": "news", "kind": "trends", "url": "https://x.com/explore/tabs/news",
               "keep": "every story shown: headline as the name, the category and time line as context, post count if shown"}]
+    agent_terms = AGENT_TERMS + list((searches_cfg or {}).get("agents", []))  # local.json's agents lane: open calls and found terms don't repeat it
     searches = [("agents", q) for q in AGENT_TERMS]
     if keywords_p and os.path.exists(keywords_p):  # the saved keyword list replaces the built-in agent and lane searches
         kw = json.load(open(keywords_p))
@@ -126,7 +127,7 @@ def plan(out, calls_p, registry_p, terms_p, tools_p, watch, max_pages, owner=Non
         name = re.sub(r"\s*\(.*?\)", "", c["subject"]).split(" and ")[0].strip()
         if len(name.split()) > 2:  # a long subject is a description; people type the product name
             name = c["slug_patterns"][0].replace("-", " ")
-        if len(name) >= 4 and not any(name.lower() in q.lower() for q in AGENT_TERMS):
+        if len(name) >= 4 and not any(name.lower() in q.lower() for q in agent_terms):
             open_subjects.append(name)
     for i in range(0, len(open_subjects), 4):
         searches.append(("open calls", or_query(open_subjects[i:i + 4])))
@@ -135,7 +136,7 @@ def plan(out, calls_p, registry_p, terms_p, tools_p, watch, max_pages, owner=Non
         top = [r["term"] for r in t["sources"].get("hackernews", {}).get("terms", [])
                if not re.search(r"\d", r["term"]) or re.search(r"[a-z]", r["term"])][:8]
         top = [x for x in top if len(x) >= 4 and x not in ("download", "simulated", "quizzes", "leaked")
-               and not any(x in q.lower() for q in AGENT_TERMS)]
+               and not any(x in q.lower() for q in agent_terms)]
         top = [x for x in top if not any(x != y and x in y for y in top)][:6]
         if top:
             searches.append(("found terms", or_query(top)))

@@ -21,12 +21,14 @@ def defaults_from(config_path):
     cfg = json.load(open(config_path))
     root = os.path.expanduser(cfg.get("root", os.path.dirname(os.path.abspath(config_path))))
     out = {}
-    for k in ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
-              "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords", "saves_inbox"):
+    paths = ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
+             "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords", "saves_inbox")
+    plain = ("terms_bluesky", "tool_lanes")  # plain settings, not paths
+    for k in paths:
         if cfg.get(k):
             v = os.path.expanduser(cfg[k].replace("{date}", datetime.date.today().isoformat()))
             out[k] = v if os.path.isabs(v) else os.path.join(root, v)
-    for k in ("terms_bluesky", "tool_lanes"):  # plain settings, not paths
+    for k in plain:
         if cfg.get(k):
             out[k] = cfg[k]
     return out
@@ -192,7 +194,7 @@ def main():
             cmd += ["--priority", d["tool_lanes"]]
         rc = subprocess.call(cmd)
         summary["steps"]["tools"] = {"exit": rc, "file": os.path.join(a.out, "tools.json")}
-        if d.get("x_watchlist") and d.get("x_keywords"):  # next week's searches follow what is trending now
+        if d.get("x_keywords") and d.get("x_watchlist"):  # next week's searches follow what is trending now; runs after terms.py, which it reads
             xo = d.get("x_public_dir") or os.path.join(a.out, "x")
             rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "xkeywords.py"), "update", d["x_keywords"],
                                   "--states", os.path.join(a.out, "states-x.json"), "--terms", os.path.join(a.out, "terms.json"),

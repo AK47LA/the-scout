@@ -67,7 +67,7 @@ def strings(node, path=""):
         yield path, node
     elif isinstance(node, dict):
         for k, v in node.items():
-            if k in ("untraced_ok", "image", "images", "kind", "theme", "id", "from", "to", "series", "status", "tone", "context", "signal_source", "names", "signals_key", "video", "scene", "crop", "focus", "post", "image_path", "image_pos", "code", "links", "cutouts", "sticker", "caption", "crop_bg", "crop_max_h", "crop_w", "frame_bg", "image_fit", "image_bg"):
+            if k in ("untraced_ok", "image", "images", "kind", "theme", "id", "from", "to", "series", "status", "tone", "context", "signal_source", "names", "signals_key", "video", "scene", "crop", "focus", "post", "image_path", "image_pos", "code", "links", "cutouts", "sticker", "caption", "crop_bg", "crop_max_h", "crop_w", "frame_bg", "image_fit", "image_bg", "file", "pos", "hero", "page"):  # paths and framing, not copy
                 continue
             yield from strings(v, f"{path}.{k}" if path else k)
     elif isinstance(node, list):

@@ -77,6 +77,9 @@ def update(path, states_p=None, terms_p=None, max_new=6, keep_days=21, posts_p=N
             continue
         auto[k] = {"query": f'"{name}"', "added": today, "last_seen": today, "why": f"{why}, {score:g} this week"}
         added += 1
+    established = {r["name"].lower() for r in json.load(open(states_p)).get("rows", []) if r.get("state") == "ESTABLISHED"} if states_p else set()
+    for k in [k for k in auto if k in established]:  # an old name getting busier is not worth a search slot
+        auto.pop(k)
     cutoff = (datetime.date.today() - datetime.timedelta(days=keep_days)).isoformat()
     dropped = [a["query"] for a in auto.values() if a["last_seen"] < cutoff]
     kw["auto"] = [a for a in auto.values() if a["last_seen"] >= cutoff]

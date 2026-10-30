@@ -31,10 +31,12 @@ WORD = re.compile(r"[a-z0-9][a-z0-9+#.'\-]*[a-z0-9+#]|[a-z0-9]")
 
 
 def grams(text):
+    text = re.sub(r"https?://\S+", " ", text)
     toks = [re.sub(r"'s$", "", t) for t in WORD.findall(text.lower().replace("’", "'"))]
     out = set()
     for i, t in enumerate(toks):
-        if len(t) >= 3 and t not in STOP and not re.fullmatch(r"[\d.,]+", t) and t not in DICT and t.rstrip("s") not in DICT:
+        if len(t) >= 3 and t not in STOP and "'" not in t and not re.fullmatch(r"[\d.,]+|https?|www|amp|t\.co", t) and t not in DICT \
+                and t.rstrip("s") not in DICT and not (t.endswith("es") and t[:-2] in DICT):
             out.add(t)
         for n in (2, 3):
             g = toks[i:i + n]

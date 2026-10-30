@@ -1,3 +1,4 @@
+import datetime
 """Offline self-test on a synthetic journal. No network, no browser needed. Usage: python3 self_test.py"""
 import json, os, random, sys, tempfile
 
@@ -208,6 +209,13 @@ def main():
     no_yes = xpass.reserve(os.path.join(tmp, "gate"), {})
     check("xpass reserve refuses every signed-in page without the owner's consent", no_yes["allowed"] is False and no_yes["gate"] == "x_owner_consent", no_yes)
 
+    import trendstate  # noqa: E402  (offline age gate: lookups are faked, no network)
+    fake = {"chappell roan": {"first_month": "2022-01-01", "title": "Chappell Roan"}, "claude duet": None}
+    aged = trendstate.age_gate([{"name": "Chappell Roan", "state": "RISING"}, {"name": "Claude Duet", "state": "NEW"}, {"name": "Labubu", "state": "FADING"}],
+                               lookup=lambda n, c: fake.get(n.lower()), today=datetime.date(2026, 10, 25))
+    check("age gate: an old name getting busier is ESTABLISHED, not RISING", aged[0]["state"] == "ESTABLISHED" and aged[0]["buzz"] == "RISING", aged[0])
+    check("age gate: a name with no history stays NEW, marked unverified", aged[1]["state"] == "NEW" and aged[1]["age"] == "unverified", aged[1])
+    check("age gate leaves going-out states alone", aged[2]["state"] == "FADING")
     import formats  # noqa: E402
     base = {"name": "one move per video, in levels", "keep": ["one move per video"], "make_yours": ["the skill"],
             "captures": ["evidence/2026-10-23/captures/x.png"]}
@@ -286,6 +294,31 @@ def weekly_pages(tmp, F, data):
     kb = brief.build([], kr, None, None)
     check("a headline in Korean script stays off the page", all("위" not in h["title"] for h in kb["press"]["top"])
           and all("위" not in p["title"] for p in kb["posts"]), kb["press"]["top"])
+    fan = (b'<rss><channel><item><title>Weverse KATSEYE Media - fruit, fruit, fr - Weverse</title><link>https://w.example/1</link>'
+           b'<pubDate>Tue, 27 Oct 2026 12:00:00 GMT</pubDate><source url="https://weverse.io">Weverse</source></item>'
+           b'<item><title>Katseye sells out arena - Billboard</title><link>https://b.example/1</link>'
+           b'<pubDate>Tue, 27 Oct 2026 10:00:00 GMT</pubDate><source url="https://b.example">Billboard</source></item></channel></rss>')
+    fh = headlines.run({"niche": "Music", "entities": [{"name": "Katseye"}]}, 7, now, fetcher=lambda u: fan)
+    check("a fan-platform post (Weverse) is counted apart, not as press", fh["read"] == 1 and fh["platform_posts"] == {"Weverse": 1}
+          and all(h["outlet"] != "Weverse" for h in fh["headlines"]), (fh["read"], fh["platform_posts"]))
+    one = {"read": 6, "outlets": 3, "by_name": {"Katseye": 5}, "top_outlets": [["Billboard", 4]],
+           "headlines": [{"title": f"Katseye story {i}", "outlet": "Billboard", "published": f"2026-10-28T0{i}:00", "names": ["Katseye"]}
+                         for i in range(4)]
+           + [{"title": 'Katseye live "Unloveu" (Live f', "outlet": "NME", "published": "2026-10-28T09:00", "names": ["Katseye"]},
+              {"title": "Doechii's new single", "outlet": "Pitchfork", "published": "2026-10-27T09:00", "names": []}]}
+    ob = brief.build([], one, None, None)
+    check("four posts reach past one name from one outlet", len(ob["posts"]) == 4
+          and len({p["receipt"].split(",")[0] for p in ob["posts"]}) >= 2, [p["receipt"] for p in ob["posts"]])
+    check("a title the feed cut short stays off the page", all("Unloveu" not in p["title"] for p in ob["posts"])
+          and all("Unloveu" not in h["title"] for h in ob["press"]["top"]), ob["press"]["top"])
+    check("the press list shows each outlet before repeating one", [h["outlet"] for h in ob["press"]["top"][:2]] == ["Billboard", "Pitchfork"]
+          or len({h["outlet"] for h in ob["press"]["top"]}) >= 2, ob["press"]["top"])
+    check("the narration counts the posts it gives", brief.first_post(ob["posts"][:2]).startswith("Two posts"))
+    kr_out = brief.build([], dict(one, headlines=[dict(one["headlines"][0], outlet="조선일보")]), None, None)
+    check("an outlet named in Korean script stays out of the narration", not brief.CJK.search(kr_out["voice"]["posts"]), kr_out["voice"]["posts"])
+    bare = headlines.parse(b'<rss><channel><item><title>Song Review: Melt</title><pubDate>Tue, 27 Oct 2026 10:00:00 GMT</pubDate>'
+                           b'<source url="https://thebiaslist.com/">https://thebiaslist.com/</source></item></channel></rss>')
+    check("an outlet with no name shows its site, not a bare address", bare[0]["outlet"] == "thebiaslist.com", bare[0]["outlet"])
     import inbox  # noqa: E402
     lines = ("2026-10-27T09:15:00-07:00 https://www.instagram.com/reel/AAA111/?igsh=xyz\n"
              "https://www.instagram.com/reel/AAA111/\n"
