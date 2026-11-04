@@ -211,7 +211,7 @@ def run(folder, media=True):
     config = os.path.join(folder, "scout-config.json")
     prev = json.load(open(config)) if os.path.exists(config) else {}
     cfg = {"root": folder}
-    for k in ("saves_inbox", "museum_dir", "notes_folders"):  # the reader's own places for the Send to Scout file and the Idea Museum, kept across runs
+    for k in ("saves_inbox", "museum_dir", "notes_folders", "notes_since", "notes_skip"):  # the reader's own places for the Send to Scout file and the Idea Museum, kept across runs
         if prev.get(k):
             cfg[k] = prev[k]
     wl = os.path.join(folder, "x-watchlist.json")

@@ -105,9 +105,9 @@ Start with a word and a colon to tag it: "movie: the dinner scene in Buddy is al
 
 If your Action Button already opens a new note, keep it. The Scout can read your ideas straight from Apple Notes on your Mac (Notes syncs them from your phone) every time it runs:
 
-1. In Notes, make a folder for ideas, for example **Ideas** (a Quick Note lands in **Quick Notes**).
-2. Jot ideas there. To save a post, tap **Share** on it in Instagram, Substack or anywhere else, choose **Notes**, and pick that folder.
-3. Add `"notes_folders": ["Ideas"]` to `scout-config.json` in your niche's folder (agents: `local.json`).
+1. Jot ideas in Notes. To save a post, tap **Share** on it in Instagram, Substack or anywhere else and choose **Notes**.
+2. Add `"notes_folders": ["Notes"]` and `"notes_since": "<today, as YYYY-MM-DD>"` to `scout-config.json` in your niche's folder (agents: `local.json`). New notes and shared posts land in **Notes** unless you pick another folder, so this needs nothing changed on your phone, and the date keeps your older notes out. If another tool writes notes there too, add `"notes_skip": ["its title's first words"]`.
+3. Prefer a folder just for ideas? Make one, for example **Ideas** (a Quick Note lands in **Quick Notes**), and name it in `notes_folders` instead.
 
 Each run reads only those folders. A note becomes an idea in your museum, a link in a note is filed as a link with its preview, and a note you edit later updates its entry instead of adding a second one. The first time, your Mac asks whether The Scout may use Notes. Nothing in Notes is changed or deleted.
 

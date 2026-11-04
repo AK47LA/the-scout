@@ -422,6 +422,15 @@ def weekly_pages(tmp, F, data):
         returncode, stdout, stderr = 0, json.dumps(fake_notes), ""
     got, why = notes_mod.read_notes(["Ideas"], run=lambda *a, **k: P())
     check("notes reads only the folders you name, through osascript", why is None and len(got) == 2 and "Ideas" in notes_mod.JXA % json.dumps(["Ideas"]))
+    shared = [{"id": "x-coredata://n3", "folder": "Notes", "name": "The Art of Being Unreachable", "body": "The Art of Being Unreachable\n",
+               "links": ["https://themuseandthemelody.substack.com/p/the-art-of-being-unreachable"], "created": "2026-11-04T22:41:30.000Z"},
+              {"id": "x-coredata://n4", "folder": "Notes", "name": "Voice HQ — November 4", "body": "Running list", "created": "2026-11-04T23:00:00.000Z"},
+              {"id": "x-coredata://n5", "folder": "Notes", "name": "Old grocery list", "body": "eggs", "created": "2026-09-01T10:00:00.000Z"}]
+    kept = notes_mod.keep(shared, "2026-11-04T22:41", ["Voice HQ", "Call with"])
+    before = len(mm["items"])
+    check("notes in the everyday Notes folder: only new ones, never another tool's", [n["id"] for n in kept] == ["x-coredata://n3"], kept)
+    check("a post shared to Notes is filed as its link (from the preview), not also as an idea", notes_mod.file_notes(mm, kept) == (0, 0, 1)
+          and len(mm["items"]) == before + 1 and mm["items"][-1].get("url", "").endswith("the-art-of-being-unreachable"), mm["items"][-1])
     check("museum writes its store and both pages", all(os.path.exists(os.path.join(mdir, f)) for f in ("museum.json", "museum.md", "museum.html")))
     res["items"].append({"url": "u", "site": "Instagram", "author": "@kr", "text": "위버스 한국어", "outcome": "ok"})
     bs = brief.build([], hl, None, None, saves=res)

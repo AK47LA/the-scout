@@ -23,7 +23,7 @@ def defaults_from(config_path):
     out = {}
     paths = ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
              "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords", "saves_inbox", "museum_dir")
-    plain = ("terms_bluesky", "tool_lanes", "notes_folders")  # plain settings, not paths
+    plain = ("terms_bluesky", "tool_lanes", "notes_folders", "notes_since", "notes_skip")  # plain settings, not paths
     for k in paths:
         if cfg.get(k):
             v = os.path.expanduser(cfg[k].replace("{date}", datetime.date.today().isoformat()))
@@ -148,7 +148,13 @@ def main():
     if d.get("notes_folders"):
         museum_dir = d.get("museum_dir") or os.path.dirname(inbox_path)
         folders = d["notes_folders"] if isinstance(d["notes_folders"], list) else [d["notes_folders"]]
-        rc_n = subprocess.call([sys.executable, "-I", os.path.join(HERE, "notes.py"), *folders, "--museum", museum_dir])
+        cmd_n = [sys.executable, "-I", os.path.join(HERE, "notes.py"), *folders, "--museum", museum_dir]
+        if d.get("notes_since"):
+            cmd_n += ["--since", str(d["notes_since"])]
+        if d.get("notes_skip"):
+            skip = d["notes_skip"] if isinstance(d["notes_skip"], list) else [d["notes_skip"]]
+            cmd_n += ["--skip", ",".join(skip)]
+        rc_n = subprocess.call(cmd_n)
         summary["steps"]["notes"] = {"exit": rc_n, "folders": folders}
 
     # 2c. Calls: resolve against the benchmark press, feed hits into the ledger
