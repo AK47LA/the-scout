@@ -6,6 +6,7 @@
   python3 museum.py list    [--museum DIR] [--new] [--board validated|favorites] [--tag movie] [--json]
   python3 museum.py note    ID [--why TEXT] [--lane TEXT] [--angle TEXT ...] [--pair ID ...] [--status S] [--board B] [--museum DIR]
   python3 museum.py creator HANDLE [--site instagram] [--why TEXT] [--remove] [--museum DIR]
+  python3 museum.py merge   OTHER_DIR [--museum DIR]     bring another museum (its museum.json) into this one
   python3 museum.py render  [--museum DIR]               museum.md and museum.html next to the store
 
 Two boards, after Dan Koe's swipe file. Validated: posts whose public numbers show they travelled. Favorites: what you love, from
@@ -220,6 +221,32 @@ def import_export(m, path):
     return added
 
 
+def merge(m, other):
+    """Add another museum's items and creators; an item already here keeps its own notes and gains any the other one had."""
+    by = {i["id"]: i for i in m["items"]}
+    added = 0
+    for it in other.get("items", []):
+        cur = by.get(it["id"])
+        if not cur:
+            m["items"].append(it)
+            by[it["id"]] = it
+            added += 1
+            continue
+        for k, v in (it.get("notes") or {}).items():
+            cur.setdefault("notes", {}).setdefault(k, v)
+        if cur.get("preview") != "ok" and it.get("preview") == "ok":
+            for k in FIELDS:
+                if it.get(k) not in (None, ""):
+                    cur[k] = it[k]
+            cur["preview"] = "ok"
+            place(cur)
+        if it.get("saved_at") and (not cur.get("saved_at") or it["saved_at"] < cur["saved_at"]):
+            cur["saved_at"] = it["saved_at"]
+    have = {c["handle"].lower() for c in m["creators"]}
+    m["creators"] += [c for c in other.get("creators", []) if c["handle"].lower() not in have]
+    return added
+
+
 def note(m, iid, why=None, lane=None, angles=None, pairs=None, status=None, board=None):
     by = {i["id"]: i for i in m["items"]}
     if iid not in by:
@@ -328,7 +355,8 @@ def _card(i):
 
 
 CSS = """:root{--bg:#f6f4ef;--panel:#fff;--ink:#1b1b1a;--muted:#6d6a63;--rule:#e3dfd6;--accent:#0f6f68;--proof:#8a5a00}
-@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1e1e1c;--ink:#f1efe9;--muted:#a3a097;--rule:#33322f;--accent:#5fc4bb;--proof:#e0b45c}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141413;--panel:#1e1e1c;--ink:#f1efe9;--muted:#a3a097;--rule:#33322f;--accent:#5fc4bb;--proof:#e0b45c}}
+:root[data-theme="dark"]{--bg:#141413;--panel:#1e1e1c;--ink:#f1efe9;--muted:#a3a097;--rule:#33322f;--accent:#5fc4bb;--proof:#e0b45c}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}h1{font-size:28px;margin:4px 0}h2{font-size:18px;margin:28px 0 10px}
 .sub{color:var(--muted);margin:0 0 14px}.bar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
@@ -442,6 +470,13 @@ def main():
         save(folder, m)
         render(folder, m)
         print(f"museum: {len(m['creators'])} creators on your list")
+    elif cmd == "merge":
+        if len(a) < 2 or not os.path.exists(os.path.join(os.path.expanduser(a[1]), "museum.json")):
+            sys.exit("give the folder that holds the other museum.json")
+        added = merge(m, load(os.path.expanduser(a[1])))
+        save(folder, m)
+        render(folder, m)
+        print(f"museum: {added} things brought in; {counts(m)['all']} in the museum")
     elif cmd == "render":
         render(folder, m)
         print(f"museum: wrote {os.path.join(folder, 'museum.html')}")
