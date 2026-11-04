@@ -353,6 +353,54 @@ def weekly_pages(tmp, F, data):
     res2 = inbox.run(ip, 7, seen=["https://example.com/story"], now=dt.datetime(2026, 10, 30, 12, tzinfo=dt.timezone.utc), fetch=fake)
     check("inbox doesn't report an undated link twice", "https://example.com/story" not in {i["url"] for i in res2["items"]})
     check("inbox says plainly when there's no inbox yet", inbox.run(os.path.join(tmp, "none.txt"))["found"] is False)
+    # The Idea Museum: spoken thoughts, two boards, Instagram's export, notes, the page
+    tl = inbox.thoughts("2026-11-04T09:00:00-08:00 movie: the dinner scene in Buddy is all one take\n"
+                        "2026-11-04 just a thought about anticipation\nhttps://x.com/a/status/1\n")
+    check("inbox reads spoken thoughts and their tags, and leaves links alone",
+          [(t["tag"], t["text"][:9]) for t in tl] == [("movie", "the dinne"), ("idea", "just a th")], tl)
+    check("inbox reads counts like 60K, 1.2M and 1,234", inbox.count("60K") == 60000 and inbox.count("1.2M") == 1200000
+          and inbox.count("1,234") == 1234 and inbox.count(None) is None)
+    import museum  # noqa: E402
+    import zipfile  # noqa: E402
+    mm = museum.load(os.path.join(tmp, "museum-none"))
+    mtext = lines + "2026-11-04T09:00:00-08:00 movie: the dinner scene is one take\n"
+    nl, nt = museum.ingest(mm, mtext, saves=res)
+    check("museum takes in every link and thought once", (nl, nt) == (4, 1), (nl, nt))
+    igi = next(i for i in mm["items"] if i.get("url") == "https://instagram.com/reel/AAA111")
+    check("museum reuses previews this week's inbox already read", igi["preview"] == "ok", igi)
+    check("museum doesn't add the same thing twice", museum.ingest(mm, mtext) == (0, 0))
+    museum.enrich(mm, 10, fetch=fake, sleep=lambda s: None)
+    check("museum puts a post with big public numbers on Validated", igi["board"] == "validated" and igi["proof"] == "60,000 likes", igi)
+    th = next(i for i in mm["items"] if i["kind"] == "thought")
+    check("museum keeps your thoughts on Favorites", th["board"] == "favorites" and th["tag"] == "movie", th)
+    failed_item = next(i for i in mm["items"] if i.get("url") == "https://example.com/story")
+    museum.enrich(mm, 10, fetch=fake, sleep=lambda s: None)
+    museum.enrich(mm, 10, fetch=fake, sleep=lambda s: None)
+    check("museum stops retrying a preview after three tries and marks it", failed_item["preview"] == "failed", failed_item)
+    exp = {"saved_saved_media": [
+        {"title": "carmscrolls", "string_map_data": {"Saved on": {"href": "https://www.instagram.com/reel/BBB222/", "timestamp": 1761500000}}},
+        {"title": "bandbrandz", "string_map_data": {"Saved on": {"href": "https://www.instagram.com/p/CCC333/", "timestamp": 1761600000}}}]}
+    zp = os.path.join(tmp, "instagram-export.zip")
+    with zipfile.ZipFile(zp, "w") as z:
+        z.writestr("your_instagram_activity/saved/saved_posts.json", json.dumps(exp))
+        z.writestr("your_instagram_activity/likes/liked_posts.json", json.dumps({"x": "https://www.instagram.com/p/NOTSAVED/"}))
+    added = museum.import_export(mm, zp)
+    bb = next(i for i in mm["items"] if i.get("url") == "https://instagram.com/p/CCC333")
+    check("museum imports every saved post from Instagram's export, with who posted it and when, and nothing else",
+          added == 2 and bb["author"] == "@bandbrandz" and bb["saved_at"].startswith("2025-10") and bb["preview"] == "pending"
+          and not any("NOTSAVED" in (i.get("url") or "") for i in mm["items"]), bb)
+    museum.note(mm, th["id"], why="One take makes you hold your breath.", angles=["a1", "a2"])
+    check("museum marks an idea processed once it has a why and angles", th["status"] == "processed" and th["notes"]["angles"] == ["a1", "a2"], th)
+    museum.note(mm, igi["id"], board="favorites")
+    museum.place(igi)
+    check("your own board choice beats the rule", igi["board"] == "favorites", igi)
+    museum.add_thought(mm, "<script>alert(1)</script> idea", "idea", None)
+    page = museum.render_html(mm)
+    check("the museum page escapes what it shows", "<script>alert(1)" not in page and "Validated" in page and "Favorites" in page)
+    mdir = os.path.join(tmp, "museum")
+    museum.save(mdir, mm)
+    museum.render(mdir, mm)
+    check("museum writes its store and both pages", all(os.path.exists(os.path.join(mdir, f)) for f in ("museum.json", "museum.md", "museum.html")))
     res["items"].append({"url": "u", "site": "Instagram", "author": "@kr", "text": "위버스 한국어", "outcome": "ok"})
     bs = brief.build([], hl, None, None, saves=res)
     check("brief turns a save into a why-it-works post", any(p["kind"] == "FROM YOUR SAVES" for p in bs["posts"]) and bs["saves"]["count"] == 3

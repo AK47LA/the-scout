@@ -211,8 +211,9 @@ def run(folder, media=True):
     config = os.path.join(folder, "scout-config.json")
     prev = json.load(open(config)) if os.path.exists(config) else {}
     cfg = {"root": folder}
-    if prev.get("saves_inbox"):  # the reader's own place for the Send to Scout file, kept across runs
-        cfg["saves_inbox"] = prev["saves_inbox"]
+    for k in ("saves_inbox", "museum_dir"):  # the reader's own places for the Send to Scout file and the Idea Museum, kept across runs
+        if prev.get(k):
+            cfg[k] = prev[k]
     wl = os.path.join(folder, "x-watchlist.json")
     has_x = os.path.exists(wl) and bool(json.load(open(wl)).get("accounts"))
     if has_x:  # X every week, no login: the niche's watchlist, read and compared week to week

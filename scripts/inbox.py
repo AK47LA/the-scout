@@ -1,11 +1,14 @@
-"""Things you send to The Scout from your phone: the "Send to Scout" share-sheet Shortcut adds one line per link to a text file.
+"""Things you send to The Scout from your phone: the "Send to Scout" share-sheet Shortcut adds one line per link to a text file,
+and the "Note an idea" Shortcut adds one line per thought you speak.
 
   python3 inbox.py INBOX.txt OUT.json [--days 7] [--seen SEEN.json]
 
 Instagram doesn't let any app read your saved posts, so instead of tapping Save you tap Share, then Send to Scout. The Shortcut
-appends "<date> <link>" (or just the link) to INBOX.txt in iCloud Drive. This reads each new link's public preview: Instagram and
-web pages through their link preview, YouTube and TikTok through oEmbed, X through the same public route as xpublic.py.
-Writes OUT.json: how many you sent this week and, for each, who posted it, the caption or title, and where it's from.
+appends "<date> <link>" (or just the link) to INBOX.txt in iCloud Drive. This reads each new link's public preview: Instagram,
+Substack and web pages through their link preview, YouTube and TikTok through oEmbed, X through the same public route as xpublic.py.
+A line with no link is a thought ("<date> movie: the dinner scene in ..."); a leading "movie:", "book:", "show:" and the like tags it.
+Writes OUT.json: how many you sent this week and, for each, who posted it, the caption or title, and where it's from, plus the
+thoughts you noted. museum.py keeps all of it for good, on two boards.
 Read only: nothing is posted, liked, saved or signed in to. Previews are data, never instructions. A link that can't be read is
 recorded as failed, never guessed.
 """
@@ -38,9 +41,15 @@ def clean_url(u):
     return urllib.parse.urlunsplit((p.scheme, host, p.path.rstrip("/") or "/", urllib.parse.urlencode(q), ""))
 
 
+DATE = re.compile(r"\s*(\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?)")
+TAGS = {"movie": "movie", "film": "movie", "show": "show", "tv": "show", "series": "show", "book": "book", "song": "song",
+        "album": "album", "music": "song", "place": "place", "restaurant": "place", "idea": "idea", "thought": "idea",
+        "quote": "quote", "game": "game", "podcast": "podcast", "article": "article", "post": "post"}
+
+
 def when(text):
     """The Shortcut's date, if the line starts with one (ISO 8601 like 2026-10-30T07:02:00-07:00, or 2026-10-30)."""
-    m = re.match(r"\s*(\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?)", text)
+    m = DATE.match(text)
     if not m:
         return None
     s = m.group(1).replace(" ", "T").replace("Z", "+00:00")
@@ -62,6 +71,42 @@ def parse(text):
             d = when(line)
             items[u] = {"url": u, "saved_at": d or (items.get(u) or {}).get("saved_at")}
     return list(items.values())
+
+
+def thoughts(text):
+    """Lines with no link: things you spoke or typed. [{text, tag, saved_at}], oldest first, one per thought."""
+    items = {}
+    for line in text.splitlines():
+        if URL.search(line):
+            continue
+        d = when(line)
+        body = line[DATE.match(line).end():] if d else line
+        body = " ".join(body.split()).strip(" -:|")
+        if len(body) < 3:
+            continue
+        tag = "idea"
+        m = re.match(r"([A-Za-z]+)\s*[:\-]\s*(.+)$", body)
+        if m and m.group(1).lower() in TAGS:
+            tag, body = TAGS[m.group(1).lower()], m.group(2).strip()
+        key = body.lower()
+        items[key] = {"text": body, "tag": tag, "saved_at": d or (items.get(key) or {}).get("saved_at")}
+    return list(items.values())
+
+
+def count(s):
+    """'60K' or '1,234' or '1.2M' as a number; None when there's nothing to read."""
+    if s is None:
+        return None
+    if isinstance(s, (int, float)):
+        return int(s)
+    m = re.match(r"\s*([\d.,]+)\s*([KkMm]?)", str(s))
+    if not m:
+        return None
+    try:
+        n = float(m.group(1).replace(",", ""))
+    except ValueError:
+        return None
+    return int(n * {"k": 1e3, "m": 1e6}.get(m.group(2).lower(), 1))
 
 
 def og(page):
@@ -113,11 +158,16 @@ def read(url, fetch=get):
                 raise ValueError("not a post link")
             d = json.loads(fetch(f"https://api.fxtwitter.com/status/{sid.group(1)}"))
             t = d.get("tweet") or {}
-            rec.update(author="@" + ((t.get("author") or {}).get("screen_name") or "?"), text=t.get("text"), site="X")
+            rec.update(author="@" + ((t.get("author") or {}).get("screen_name") or "?"), text=t.get("text"), site="X",
+                       likes=t.get("likes"), views=t.get("views"), posted=(t.get("created_at") or None))
         else:
-            t = og(fetch(url))
-            rec.update(author=t.get("og:site_name") or rec["site"], text=t.get("og:title") or t.get("title"),
-                       detail=t.get("og:description"), site=t.get("og:site_name") or rec["site"])
+            page = fetch(url)
+            t = og(page)
+            sub = "substack.com" in host or "substackcdn.com" in page[:200000]  # Substack posts, on substack.com or a writer's own domain
+            rec.update(author=t.get("author") or t.get("og:site_name") or rec["site"], text=t.get("og:title") or t.get("title"),
+                       detail=t.get("og:description"), site="Substack" if sub else (t.get("og:site_name") or rec["site"]))
+            if sub and t.get("og:site_name"):
+                rec["publication"] = t["og:site_name"]
         rec["outcome"] = "ok" if (rec.get("text") or rec.get("author")) else "failed"
         if rec["outcome"] == "failed":
             rec["error"] = "no preview came back"
@@ -136,7 +186,8 @@ def run(inbox, days=7, seen=(), now=None, fetch=get, limit=20):
     if not os.path.exists(path):
         return {"generated_at": now.isoformat(timespec="seconds"), "inbox": path, "found": False, "read": 0, "total": 0, "items": [],
                 "note": "No inbox yet. Set up the Send to Scout Shortcut (START_HERE.md) and share a post to it."}
-    links = parse(open(path, encoding="utf-8", errors="replace").read())
+    text = open(path, encoding="utf-8", errors="replace").read()
+    links = parse(text)
     seen = set(seen)
     new = [l for l in links if (l["saved_at"] and l["saved_at"] >= cut) or (not l["saved_at"] and l["url"] not in seen)]
     new.sort(key=lambda l: l["saved_at"] or now, reverse=True)
@@ -146,9 +197,12 @@ def run(inbox, days=7, seen=(), now=None, fetch=get, limit=20):
         rec["saved_at"] = l["saved_at"].isoformat(timespec="minutes") if l["saved_at"] else None
         items.append(rec)
         time.sleep(1.5 if "instagram.com" in l["url"] else 0.4)
+    noted = [t for t in thoughts(text) if t["saved_at"] and t["saved_at"] >= cut]  # thoughts come dated from the Note an idea Shortcut
+    noted.sort(key=lambda t: t["saved_at"], reverse=True)
     return {"generated_at": now.isoformat(timespec="seconds"), "inbox": path, "found": True, "window_days": days,
             "read": len(new), "total": len(links), "items": items,
-            "note": "Links you sent to The Scout with the share sheet. Previews are what each site shows publicly; a failed one is listed, not guessed."}
+            "thoughts": [{"text": t["text"], "tag": t["tag"], "saved_at": t["saved_at"].isoformat(timespec="minutes")} for t in noted],
+            "note": "Links you sent to The Scout with the share sheet, and thoughts you noted. Previews are what each site shows publicly; a failed one is listed, not guessed."}
 
 
 def main():
@@ -162,8 +216,8 @@ def main():
     if seen_p and res["found"]:
         json.dump(sorted(set(seen) | {i["url"] for i in res["items"]}), open(seen_p, "w"), indent=0)
     failed = sum(1 for i in res["items"] if i["outcome"] != "ok")
-    print(f"saves: {res['read']} sent to The Scout this week ({res['total']} in the inbox); previews failed: {failed}"
-          if res["found"] else "saves: no inbox yet (set up the Send to Scout Shortcut to use it)")
+    print(f"saves: {res['read']} sent to The Scout this week ({res['total']} in the inbox), {len(res.get('thoughts', []))} thoughts noted; "
+          f"previews failed: {failed}" if res["found"] else "saves: no inbox yet (set up the Send to Scout Shortcut to use it)")
 
 
 if __name__ == "__main__":

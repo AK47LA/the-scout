@@ -22,7 +22,7 @@ def defaults_from(config_path):
     root = os.path.expanduser(cfg.get("root", os.path.dirname(os.path.abspath(config_path))))
     out = {}
     paths = ("run_dir", "out", "ledger", "basket", "signals", "manifest", "slides", "weekly_out", "weekly_slides", "calls", "outlets",
-             "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords", "saves_inbox")
+             "registry", "backtest", "x_manifest", "x_dir", "x_watchlist", "x_public_dir", "x_history", "x_keywords", "saves_inbox", "museum_dir")
     plain = ("terms_bluesky", "tool_lanes")  # plain settings, not paths
     for k in paths:
         if cfg.get(k):
@@ -137,6 +137,13 @@ def main():
         rc = subprocess.call([sys.executable, "-I", os.path.join(HERE, "inbox.py"), inbox_path, os.path.join(a.out, "saves.json"),
                               "--seen", os.path.join(a.out, "saves-seen.json")])
         summary["steps"]["saves"] = {"exit": rc, "file": os.path.join(a.out, "saves.json")}
+        # The Idea Museum keeps everything you sent or noted, for good, on two boards (Validated, Favorites), next to the inbox
+        museum_dir = d.get("museum_dir") or os.path.dirname(inbox_path)
+        cmd = [sys.executable, "-I", os.path.join(HERE, "museum.py"), "ingest", "--inbox", inbox_path, "--museum", museum_dir, "--limit", "25"]
+        if rc == 0 and os.path.exists(os.path.join(a.out, "saves.json")):
+            cmd += ["--saves", os.path.join(a.out, "saves.json")]
+        rc_m = subprocess.call(cmd)
+        summary["steps"]["museum"] = {"exit": rc_m, "file": os.path.join(museum_dir, "museum.html")}
 
     # 2c. Calls: resolve against the benchmark press, feed hits into the ledger
     if a.calls and a.outlets and os.path.exists(a.calls):

@@ -41,7 +41,9 @@ Using Codex or Claude Code? After installing, ask: "Set up The Scout for indie g
 
 ## Your saves
 
-Instagram doesn't let apps read saved posts, so The Scout reads a share-sheet inbox instead. Set up the **Send to Scout** iPhone Shortcut (steps in `START_HERE.md`), tap Share then Send to Scout on any post, and each edition gets a "What you saved this week" page plus one "why it works" post from your saves. `scripts/inbox.py` reads each link's public preview (Instagram link previews, YouTube and TikTok oEmbed, X through api.fxtwitter.com, Open Graph for web pages). It never signs in.
+Instagram doesn't let apps read saved posts, so The Scout reads a share-sheet inbox instead. Set up the **Send to Scout** iPhone Shortcut (steps in `START_HERE.md`), tap Share then Send to Scout on any post, and each edition gets a "What you saved this week" page plus one "why it works" post from your saves. `scripts/inbox.py` reads each link's public preview (Instagram link previews, YouTube and TikTok oEmbed, X through api.fxtwitter.com, Open Graph for Substack and other web pages). It never signs in. A second Shortcut, **Note an idea**, takes a spoken thought with one press of the Action Button.
+
+Everything is kept for good in your **Idea Museum** (`scripts/museum.py`), on two boards: Validated (posts whose public numbers show they travelled) and Favorites (what you love). It can also import every post you've ever saved on Instagram, from Instagram's own data download. See `START_HERE.md`.
 
 ## Commands
 
@@ -68,6 +70,7 @@ Instagram doesn't let apps read saved posts, so The Scout reads a share-sheet in
 | Render frames and PDF | `python3 scripts/render.py SLIDES AUDIT FRAMES [--captures C] [--data name=path]` |
 | Audio and video | `python3 scripts/media.py SLIDES AUDIT FRAMES [--data name=path]` |
 | Cover drawing and motion (Higgsfield key) | `python3 scripts/illustrate.py image "PROMPT" OUT --param aspect_ratio=3:4` |
+| Idea Museum: take in, import Instagram saves, list, note | `python3 scripts/museum.py ingest`, `import EXPORT.zip`, `list --new`, `note ID --why ...` |
 | Self-test, offline | `python3 scripts/self_test.py` |
 
 A `local.json` beside this file can set default paths for your own machine. Keep it to yourself.

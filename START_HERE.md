@@ -33,7 +33,7 @@ What the installer needs: Python (your Mac offers to install it if it's missing)
 | The move | One thing to do this week, picked by a fixed rule from those numbers |
 | Four posts to make | Starting points, each tied to its receipt. The take is yours |
 | The press | The week's headlines about your niche and the names the press wrote about most |
-| Your saves | What you sent to The Scout from your phone this week (once you've set up the Send to Scout shortcut) |
+| Your saves | What you sent to The Scout from your phone this week (once you've set up the Send to Scout shortcut). Everything is also kept in your Idea Museum |
 | History | A year of weekly Wikipedia views and Bluesky posts for each thing you track |
 
 ## The agent way: just ask
@@ -87,6 +87,39 @@ Set it up once on your iPhone (about two minutes):
 Now in any app: tap Share (on Instagram, the paper plane, then the share-sheet icon), then Send to Scout. The next time you make your edition, The Scout reads each link's public preview: who posted it and the caption or title. It never signs in to Instagram or anywhere else.
 
 The Scout looks for the file at `~/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents/Scout/saves.txt`. To keep it somewhere else, add `"saves_inbox": "/path/to/saves.txt"` to `scout-config.json` in your niche's folder (Documents › The Scout › your niche). Agents running `run.py` read the same key from `local.json`.
+
+### Note a thought with one press
+
+For the things that aren't links (a scene in a film, a line in a book, an idea in the shower), make a second shortcut:
+
+1. In **Shortcuts**, tap **+** and name it **Note an idea**.
+2. Add **Dictate Text**. Set **Stop Listening** to **After Pause**.
+3. Add a **Text** action: **Current Date** (format **ISO 8601**), a space, then **Dictated Text**.
+4. Add **Append to Text File**: the same `Scout/saves.txt`, with **Make New Line** on.
+5. Add **Show Notification** with the text "Noted."
+6. On an iPhone with an Action Button, open **Settings › Action Button**, choose **Shortcut**, then **Note an idea**. Otherwise use **Settings › Accessibility › Touch › Back Tap**, or just say "Hey Siri, Note an idea."
+
+Start with a word and a colon to tag it: "movie: the dinner scene in Buddy is all one take", "book:", "show:", "song:", "place:". Anything else is filed as an idea.
+
+## Your Idea Museum
+
+Everything you send or note is kept for good in your **Idea Museum**, on two boards:
+
+- **Validated:** posts whose public numbers show they travelled (10,000 likes or 250,000 views and up).
+- **Favorites:** what you love: your own thoughts and notes, and saves without big numbers.
+
+One of each, from your own point of view, is a post. Every edition updates it. It lives next to your inbox in iCloud Drive › Shortcuts › Scout: open `museum.html` on your Mac to search and filter it, or on your phone in the Files app. `museum.md` is the same list as plain text.
+
+**Bring in everything you've already saved on Instagram.** Instagram lets you download your own data, saved posts included:
+
+1. In Instagram, open your profile, the menu, then **Accounts Center › Your information and permissions › Download your information**.
+2. Choose **Download or transfer information**, your Instagram account, then **Some of your information**, and tick **Saved**.
+3. Choose **Download to device**, **All time** and the **JSON** format, then **Create files**. Instagram emails you when the file is ready.
+4. Download the .zip, then run `python3 scripts/museum.py import ~/Downloads/instagram-....zip` (or ask your agent to).
+
+Every saved post is added straight away. Their previews (who posted it, the caption, the likes) are read a few at a time on each run so Instagram doesn't block the reads.
+
+Ask your agent to "process my ideas" and it reads each new thing, says why it works, names the lane, and writes five angles on it. It never writes the post for you.
 
 ## Add outlets you trust
 
