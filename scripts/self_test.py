@@ -358,6 +358,8 @@ def weekly_pages(tmp, F, data):
                         "2026-11-04 just a thought about anticipation\nhttps://x.com/a/status/1\n")
     check("inbox reads spoken thoughts and their tags, and leaves links alone",
           [(t["tag"], t["text"][:9]) for t in tl] == [("movie", "the dinne"), ("idea", "just a th")], tl)
+    spoken = inbox.thoughts("2026-11-04T14:30:00-08:00 Movie, the opening shot of The Player\n")
+    check("inbox reads a tag you spoke, with a comma after it", spoken and spoken[0]["tag"] == "movie" and spoken[0]["text"].startswith("the opening"), spoken)
     check("inbox reads counts like 60K, 1.2M and 1,234", inbox.count("60K") == 60000 and inbox.count("1.2M") == 1200000
           and inbox.count("1,234") == 1234 and inbox.count(None) is None)
     import museum  # noqa: E402

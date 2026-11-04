@@ -85,7 +85,7 @@ def thoughts(text):
         if len(body) < 3:
             continue
         tag = "idea"
-        m = re.match(r"([A-Za-z]+)\s*[:\-]\s*(.+)$", body)
+        m = re.match(r"([A-Za-z]+)\s*[:\-,.]\s*(.+)$", body)  # spoken tags come out as "Movie, the..." or "movie: the..."
         if m and m.group(1).lower() in TAGS:
             tag, body = TAGS[m.group(1).lower()], m.group(2).strip()
         key = body.lower()
