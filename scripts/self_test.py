@@ -406,6 +406,22 @@ def weekly_pages(tmp, F, data):
     museum.add_thought(other, "a thought from another museum", "idea", None)
     museum.add_thought(other, th["text"], "movie", None)
     check("museum merges another museum without doubling what it already has", museum.merge(mm, other) == 1)
+    import notes as notes_mod  # noqa: E402
+    fake_notes = [{"id": "x-coredata://n1", "folder": "Ideas", "name": "Movie, The Player opening shot", "body": "Movie, The Player opening shot\nNo cuts for seven minutes",
+                   "created": "2026-11-04T22:00:00.000Z"},
+                  {"id": "x-coredata://n2", "folder": "Ideas", "name": "https://www.instagram.com/reel/DDD444/", "body": "https://www.instagram.com/reel/DDD444/",
+                   "created": "2026-11-04T22:05:00.000Z"}]
+    na, nu, nl = notes_mod.file_notes(mm, fake_notes)
+    pn = next(i for i in mm["items"] if i.get("source") == "apple-notes" and i["kind"] == "thought")
+    check("notes files an Apple Note as a tagged idea, and a shared link as a link", (na, nu, nl) == (1, 0, 1) and pn["tag"] == "movie"
+          and pn["text"] == "The Player opening shot No cuts for seven minutes"
+          and any(i.get("url") == "https://instagram.com/reel/DDD444" for i in mm["items"]), (na, nu, nl, pn))
+    fake_notes[0]["body"] = "Movie, The Player opening shot\nOver seven minutes, no cuts"
+    check("an edited note updates its idea instead of adding another", notes_mod.file_notes(mm, fake_notes)[:2] == (0, 1))
+    class P:  # a stand-in for osascript
+        returncode, stdout, stderr = 0, json.dumps(fake_notes), ""
+    got, why = notes_mod.read_notes(["Ideas"], run=lambda *a, **k: P())
+    check("notes reads only the folders you name, through osascript", why is None and len(got) == 2 and "Ideas" in notes_mod.JXA % json.dumps(["Ideas"]))
     check("museum writes its store and both pages", all(os.path.exists(os.path.join(mdir, f)) for f in ("museum.json", "museum.md", "museum.html")))
     res["items"].append({"url": "u", "site": "Instagram", "author": "@kr", "text": "위버스 한국어", "outcome": "ok"})
     bs = brief.build([], hl, None, None, saves=res)

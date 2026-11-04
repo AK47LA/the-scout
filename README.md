@@ -70,6 +70,7 @@ Everything is kept for good in your **Idea Museum** (`scripts/museum.py`), on tw
 | Render frames and PDF | `python3 scripts/render.py SLIDES AUDIT FRAMES [--captures C] [--data name=path]` |
 | Audio and video | `python3 scripts/media.py SLIDES AUDIT FRAMES [--data name=path]` |
 | Cover drawing and motion (Higgsfield key) | `python3 scripts/illustrate.py image "PROMPT" OUT --param aspect_ratio=3:4` |
+| Apple Notes ideas into the museum (Mac) | `python3 scripts/notes.py Ideas` (or `"notes_folders"` in local.json) |
 | Idea Museum: take in, import Instagram saves, list, note | `python3 scripts/museum.py ingest`, `import EXPORT.zip`, `list --new`, `note ID --why ...` |
 | Self-test, offline | `python3 scripts/self_test.py` |
 

@@ -101,6 +101,16 @@ For the things that aren't links (a scene in a film, a line in a book, an idea i
 
 Start with a word and a colon to tag it: "movie: the dinner scene in Buddy is all one take", "book:", "show:", "song:", "place:". Anything else is filed as an idea.
 
+### Or use Apple Notes for all of it
+
+If your Action Button already opens a new note, keep it. The Scout can read your ideas straight from Apple Notes on your Mac (Notes syncs them from your phone) every time it runs:
+
+1. In Notes, make a folder for ideas, for example **Ideas** (a Quick Note lands in **Quick Notes**).
+2. Jot ideas there. To save a post, tap **Share** on it in Instagram, Substack or anywhere else, choose **Notes**, and pick that folder.
+3. Add `"notes_folders": ["Ideas"]` to `scout-config.json` in your niche's folder (agents: `local.json`).
+
+Each run reads only those folders. A note becomes an idea in your museum, a link in a note is filed as a link with its preview, and a note you edit later updates its entry instead of adding a second one. The first time, your Mac asks whether The Scout may use Notes. Nothing in Notes is changed or deleted.
+
 ## Your Idea Museum
 
 Everything you send or note is kept for good in your **Idea Museum**, on two boards:
