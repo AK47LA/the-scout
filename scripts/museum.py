@@ -301,6 +301,19 @@ def ordered(items):
     return sorted(items, key=lambda i: i.get("saved_at") or i.get("added") or "", reverse=True)
 
 
+def short_name(i):
+    """A pair partner in a few words: who posted it, or the start of your thought."""
+    if i.get("kind") == "thought":
+        t = i.get("text") or ""
+        return (t[:40] + "...") if len(t) > 40 else t
+    return i.get("author") or i.get("site") or "a link"
+
+
+def partners(m, i):
+    by = {x["id"]: x for x in m["items"]}
+    return [short_name(by[p]) for p in (i.get("notes") or {}).get("pairs_with", []) if p in by]
+
+
 def render_md(m):
     c = counts(m)
     lines = ["# Idea Museum", "", f"Updated {m.get('updated', now_iso())[:10]}. {c['all']} things: {c['validated']} validated, "
@@ -321,6 +334,8 @@ def render_md(m):
                 lines.append(f"  Lane: {n['lane']}")
             for a in n.get("angles", []):
                 lines.append(f"  Angle: {a}")
+            if partners(m, i):
+                lines.append("  Pairs with: " + "; ".join(partners(m, i)))
         lines.append("")
     if m["creators"]:
         lines += ["## Creators worth studying", ""] + [f"- @{x['handle']} ({x['site']})" + (f": {x['why']}" if x.get("why") else "")
@@ -328,7 +343,7 @@ def render_md(m):
     return "\n".join(lines)
 
 
-def _card(i):
+def _card(i, pairs=()):
     e = html.escape
     n = i.get("notes") or {}
     text = i.get("text") or ("Preview not read yet." if i.get("kind") == "link" else "")
@@ -346,6 +361,8 @@ def _card(i):
         body.append(f'<p class="lane">{e(n["lane"])}</p>')
     if n.get("angles"):
         body.append('<ol class="angles">' + "".join(f"<li>{e(a)}</li>" for a in n["angles"]) + "</ol>")
+    if pairs:
+        body.append('<p class="lane">Pairs with: ' + e("; ".join(pairs)) + '</p>')
     if i.get("url"):
         body.append(f'<a class="open" href="{e(i["url"])}" rel="noopener noreferrer" target="_blank">Open</a>')
     hay = " ".join(str(i.get(k) or "") for k in ("text", "author", "site", "tag", "status")) + " " + " ".join(str(v) for v in n.values() if isinstance(v, str))
@@ -386,7 +403,7 @@ def render_html(m):
     secs = []
     for board, title, blurb in (("validated", "Validated", "Posts whose public numbers show they travelled."),
                                 ("favorites", "Favorites", "What you love: your thoughts, notes and saves.")):
-        cards = "".join(_card(i) for i in ordered([x for x in m["items"] if (x.get("board") == "validated") == (board == "validated")]))
+        cards = "".join(_card(i, partners(m, i)) for i in ordered([x for x in m["items"] if (x.get("board") == "validated") == (board == "validated")]))
         secs.append(f'<h2>{title}</h2><p class="sub">{blurb}</p><div class="grid">{cards or "<p class=empty>Nothing here yet.</p>"}</div>')
     cr = ""
     if m["creators"]:
