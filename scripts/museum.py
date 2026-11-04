@@ -320,7 +320,7 @@ def render_md(m):
              f"{c['favorites']} favorites, {c['new']} not processed yet.", ""]
     for board, title in (("validated", "Validated: posts whose numbers show they travelled"), ("favorites", "Favorites: what you love")):
         lines += [f"## {title}", ""]
-        for i in ordered([x for x in m["items"] if (x.get("board") == "validated") == (board == "validated")]):
+        for i in ordered([x for x in m["items"] if x.get("status") != "parked" and (x.get("board") == "validated") == (board == "validated")]):
             who = f" {i['author']}:" if i.get("author") else ""
             text = (i.get("text") or ("(preview not read yet)" if i.get("kind") == "link" else "")).replace("\n", " ")
             extra = f" ({i['proof']})" if i.get("proof") else ""
@@ -337,6 +337,9 @@ def render_md(m):
             if partners(m, i):
                 lines.append("  Pairs with: " + "; ".join(partners(m, i)))
         lines.append("")
+    shelf = ordered([x for x in m["items"] if x.get("status") == "parked"])
+    if shelf:
+        lines += [f"## Reference shelf ({len(shelf)})", ""] + [f"- [{i['id']}] {label(i)} {i.get('author') or ''}: {(i.get('text') or '')[:140]} {i.get('url') or ''}" for i in shelf] + [""]
     if m["creators"]:
         lines += ["## Creators worth studying", ""] + [f"- @{x['handle']} ({x['site']})" + (f": {x['why']}" if x.get("why") else "")
                                                        for x in m["creators"]] + [""]
@@ -389,7 +392,7 @@ button.on{background:var(--ink);color:var(--bg)}.grid{display:grid;grid-template
 
 JS = """const q=document.getElementById('q');let tag='all';
 function apply(){const s=q.value.trim().toLowerCase();document.querySelectorAll('.card').forEach(c=>{
-const ok=(tag==='all'||c.dataset.tag===tag||(tag==='new'&&c.dataset.status==='new'))&&(!s||c.dataset.hay.includes(s));c.style.display=ok?'':'none';});}
+const ok=(tag==='all'||c.dataset.tag===tag||(tag==='new'&&c.dataset.status==='new')||(tag==='researching'&&c.dataset.status==='researching'))&&(!s||c.dataset.hay.includes(s));c.style.display=ok?'':'none';});}
 q.addEventListener('input',apply);document.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{
 tag=b.dataset.f;document.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on',x===b));apply();}));"""
 
@@ -398,13 +401,20 @@ def render_html(m):
     e = html.escape
     c = counts(m)
     tags = sorted({(i.get("tag") or i.get("site") or "link").lower() for i in m["items"]})
-    chips = '<button class="on" data-f="all">All</button><button data-f="new">Not processed</button>' + "".join(
+    chips = ('<button class="on" data-f="all">All</button><button data-f="new">Not processed</button>'
+             '<button data-f="researching">Researching</button>') + "".join(
         f'<button data-f="{e(t)}">{e(t.title())}</button>' for t in tags)
     secs = []
+    live = [x for x in m["items"] if x.get("status") != "parked"]
     for board, title, blurb in (("validated", "Validated", "Posts whose public numbers show they travelled."),
                                 ("favorites", "Favorites", "What you love: your thoughts, notes and saves.")):
-        cards = "".join(_card(i, partners(m, i)) for i in ordered([x for x in m["items"] if (x.get("board") == "validated") == (board == "validated")]))
+        cards = "".join(_card(i, partners(m, i)) for i in ordered([x for x in live if (x.get("board") == "validated") == (board == "validated")]))
         secs.append(f'<h2>{title}</h2><p class="sub">{blurb}</p><div class="grid">{cards or "<p class=empty>Nothing here yet.</p>"}</div>')
+    shelf = [x for x in m["items"] if x.get("status") == "parked"]
+    if shelf:
+        cards = "".join(_card(i, partners(m, i)) for i in ordered(shelf))
+        secs.append(f'<details><summary><h2 style="display:inline">Reference shelf ({len(shelf)})</h2></summary>'
+                    f'<p class="sub">Saved for reference, not post ideas yet.</p><div class="grid">{cards}</div></details>')
     cr = ""
     if m["creators"]:
         cr = "<h2>Creators worth studying</h2><ul>" + "".join(
