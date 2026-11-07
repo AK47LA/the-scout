@@ -1,0 +1,121 @@
+{
+ "handle": "@ADRIANKARVINEN",
+ "lanes": "ENTERTAINMENT · CULTURE · EMERGING TECH",
+ "cover": {
+  "lines": [
+   "Signals {s1} I'm",
+   "watching as {s2}",
+   "an *entertainment*",
+   "*and tech* {s3}",
+   "strategist."
+  ],
+  "stickers": {
+   "s1": "media/fanta3_stk.png",
+   "s2": "media/stranger_stk.png",
+   "s3": "media/lore_stk.png"
+  },
+  "person": "media/me_cutout.png",
+  "person_h": 640
+ },
+ "slides": [
+  {
+   "lane": "CULTURE",
+   "headline": "Lore beat slop",
+   "aside": "the word of the year is lore",
+   "media": [
+    {
+     "path": "media/lore.png",
+     "label": "Sprout Social · 14 Oct"
+    }
+   ],
+   "body": "Sprout Social named “lore” its 2026 social media word of the year, with over 10 million mentions. “Slop” had 8.8 million. 57% of social users say they want original, multi-part series from brands.",
+   "take": "[YOUR TAKE: one or two lines in your words]"
+  },
+  {
+   "lane": "ENTERTAINMENT",
+   "headline": "America's No. 1 film is a documentary",
+   "aside": "Nathan Fielder's",
+   "media": [
+    {
+     "path": "media/fielder_still.png",
+     "label": "You Can See Everything · A24 via AP"
+    }
+   ],
+   "body": "You Can See Everything, Fielder and Lance Oppenheim's film on Elizabeth Holmes, took $10.6M over Halloween weekend to top the box office. Rotten Tomatoes says no non-concert documentary has been No. 1 since Fahrenheit 9/11 in 2004.",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "ENTERTAINMENT",
+   "headline": "Stranger Things ended.",
+   "aside": "the world didn't",
+   "media": [
+    {
+     "path": "media/stranger.png",
+     "label": "Netflix · Stranger Things Day · 6 Nov",
+     "pos": "center 30%"
+    }
+   ],
+   "body": "On the night Will vanished in the show, Netflix announced Other Worlds, a live-action series set in the 1950s for 2028, plus a blooper reel and an Upside Down Tamagotchi.",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "CULTURE",
+   "headline": "Fanta stopped renting monsters",
+   "aside": "and built its own",
+   "media": [
+    {
+     "path": "media/fanta3.png",
+     "label": "Fanta Haunted Universe · Adweek"
+    }
+   ],
+   "body": "After years of licensing Chucky, Michael Myers and Freddy Fazbear, Fanta launched four original monsters in 50 markets. Its global VP of marketing: “Halloween should be to Fanta what Christmas is to Coke.”",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "CULTURE",
+   "headline": "The No. 1 costume was a horror mascot",
+   "aside": "Buddy beat the unicorn",
+   "media": [
+    {
+     "list": [
+      "1. Buddy the Unicorn (Buddy)",
+      "2. NeeDoh",
+      "3. Nikki (Obsession)",
+      "4. Agamemnon (The Odyssey)",
+      "5. Lily Love Braids (Poppy Playtime)"
+     ],
+     "label": "Google Frightgeist · 14 Oct"
+    }
+   ],
+   "body": "Google's top trending Halloween costume came from Casper Kelly's horror film Buddy, and searches for it passed “kids unicorn costume” for the first time. Four of the top five are characters.",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "ENTERTAINMENT",
+   "headline": "A YouTuber made a $371M hit",
+   "aside": "then gave his next film away",
+   "media": [
+    {
+     "path": "media/barker.png",
+     "label": "Mama Bear · Tubefilter · 28 Oct"
+    }
+   ],
+   "body": "Curry Barker's Obsession made $371M worldwide on a budget of about $750K, per GamesRadar. On 29 Oct he premiered his next horror short, Mama Bear, free on his YouTube channel.",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "EMERGING TECH",
+   "headline": "Worlds you can play",
+   "aside": "from a sentence",
+   "media": [
+    {
+     "path": "media/genie_c.png",
+     "label": "Google DeepMind · Genie 4 · 27 Oct",
+     "h": 300
+    }
+   ],
+   "body": "Google DeepMind's Genie 4 makes playable, real-time worlds you steer with text, with live sound, music and dialogue. It's with trusted testers for now.",
+   "take": "[YOUR TAKE]"
+  }
+ ]
+}
