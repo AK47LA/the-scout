@@ -45,6 +45,19 @@
    "take": "[YOUR TAKE]"
   },
   {
+   "lane": "EMERGING TECH",
+   "headline": "Your melody goes in first",
+   "aside": "Suno starts songs from MIDI",
+   "media": [
+    {
+     "path": "media/suno.png",
+     "label": "Suno · 4 Nov"
+    }
+   ],
+   "body": "Drop a MIDI sketch into Suno and it builds the full song around your notes. The prompt decides whether it follows them exactly, develops the motif or plays it on new instruments. Pro and Premier only for now.",
+   "take": "[YOUR TAKE]"
+  },
+  {
    "lane": "ENTERTAINMENT",
    "headline": "Stranger Things ended.",
    "aside": "the world didn't",
@@ -59,6 +72,19 @@
    "take": "[YOUR TAKE]"
   },
   {
+   "lane": "EMERGING TECH",
+   "headline": "Stems on your own laptop",
+   "aside": "iZotope Photon",
+   "media": [
+    {
+     "path": "media/photon_c.png",
+     "label": "iZotope Photon · 3 Nov"
+    }
+   ],
+   "body": "Photon splits a mixed track into stems, separates up to six speakers from one file and cleans up noisy location audio. It runs on your own machine, nothing uploaded. $259 on launch sale.",
+   "take": "[YOUR TAKE]"
+  },
+  {
    "lane": "CULTURE",
    "headline": "Fanta stopped renting monsters",
    "aside": "and built its own",
@@ -69,6 +95,19 @@
     }
    ],
    "body": "After years of licensing Chucky, Michael Myers and Freddy Fazbear, Fanta launched four original monsters in 50 markets. Its global VP of marketing: “Halloween should be to Fanta what Christmas is to Coke.”",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "EMERGING TECH",
+   "headline": "Clips that come with their own stems",
+   "aside": "Pika H3 Flex",
+   "media": [
+    {
+     "path": "media/pika_c.png",
+     "label": "Pika H3 Flex · 29 Oct"
+    }
+   ],
+   "body": "Up to 15-second clips with synced stereo sound, finished up to 4K. The soundtrack can be split into dialogue, music and effects, so you can drop in your own track. Creator subscribers get 15 free a day until 15 Nov.",
    "take": "[YOUR TAKE]"
   },
   {
@@ -105,6 +144,19 @@
   },
   {
    "lane": "EMERGING TECH",
+   "headline": "Build your own creative app",
+   "aside": "by describing it",
+   "media": [
+    {
+     "path": "media/runway.png",
+     "label": "Runway App Studio · 26 Oct"
+    }
+   ],
+   "body": "Runway App Studio turns a plain description into a working app you can share with your team or a public link. Runway's own examples: a character swap app and an app that makes instrumental albums with cover art.",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "EMERGING TECH",
    "headline": "Worlds you can play",
    "aside": "from a sentence",
    "media": [
@@ -116,6 +168,25 @@
    ],
    "body": "Google DeepMind's Genie 4 makes playable, real-time worlds you steer with text, with live sound, music and dialogue. It's with trusted testers for now.",
    "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "WHAT I'D DO ON MONDAY",
+   "headline": "Steal the animated story short",
+   "aside": "no camera needed",
+   "media": [
+    {
+     "list": [
+      "A free skill: claude-animated-shorts",
+      "55 to 70 second vertical story shorts",
+      "2D characters in a painted 3D town",
+      "Script, voice, shots, stills, render",
+      "Made on your own computer"
+     ],
+     "label": "GitHub · mromidev · MIT licence"
+    }
+   ],
+   "body": "Its proof is a 67-second short about the 1831 Broughton bridge. The same move works for any history story people love, without filming or archival footage.",
+   "take": "[YOUR TAKE: the story you'd make first]"
   }
  ]
 }
