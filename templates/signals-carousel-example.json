@@ -29,7 +29,7 @@
     }
    ],
    "body": "Sprout Social named “lore” its 2026 social media word of the year: over 10 million mentions, against 8.8 million for “slop”.",
-   "take": "As the cost of making anything goes to zero, what stands out is telling unique stories in ways that connect. It's not new. “Tell me a story” is the first thing kids ask for at bedtime. The winners will come from it."
+   "take": "As the cost of creativity and distribution becomes negligible, the advantage moves to the story itself. Not just telling stories, but telling unique ones in ways that genuinely connect. None of this is new. Storytelling has been ingrained in us for thousands of years; “tell me a story” is the first thing a child asks for at night. The winners of the next decade will be the ones who master the lore."
   },
   {
    "lane": "CULTURE",
@@ -42,7 +42,7 @@
     }
    ],
    "body": "Since 2023, a singing polar bear has been reminding people that November 2026 is coming. A version from late August passed 980,000 views in two weeks. Now it's here.",
-   "take": "Everything is instant and disposable. Making something to be experienced at a later date takes discipline and foresight. That's how you cut through the noise."
+   "take": "We live in an age of instant gratification, where most content is made to be consumed once and forgotten. Building something to be experienced at a future date runs against that grain. It takes foresight and discipline, which is exactly why it cuts through. In a feed of disposable content, patience is becoming one of the few ways left to earn real attention."
   },
   {
    "lane": "CULTURE",
@@ -55,7 +55,7 @@
     }
    ],
    "body": "BTS sold 252,000 tickets across three nights in São Paulo, and the cinema livestream made $3M in the US. Their first Brazil fan meeting, in 2014, held 1,500.",
-   "take": "Fans want to be connected to other fans. An event about the event. Artists who can build these moments, for films or concerts, will stand out. I'd love to see it at industry conferences too."
+   "take": "Live entertainment is turning fan-driven: people want to share the moment with others who feel the same way, an event about the event. Every industry should take note, conferences most of all. Run them in parallel, with smaller rooms in other cities linked live to the main stage, physical and digital at once. Nobody wants to watch a keynote alone at their desk; the whole point is the people. So expand the room, don’t just stream it."
   },
   {
    "lane": "ENTERTAINMENT",
@@ -63,39 +63,19 @@
    "aside": "Vice City night",
    "media": [
     {
-     "path": "media/heat.png",
-     "label": "Miami Heat x Cactus Jack x Nike · SI",
+     "frames": [
+      "media/clips/heat0.jpg",
+      "media/clips/heat1.jpg",
+      "media/clips/heat2.jpg",
+      "media/clips/heat3.jpg"
+     ],
+     "path": "media/clips/heat0.jpg",
+     "label": "Miami Heat on X · 6 Nov",
      "pos": "center 40%"
     }
    ],
    "body": "On 18 Nov, the night before GTA VI launches, the Miami Heat wear “Vice City” jerseys with the GTA VI logo, sold at the arena that day.",
-   "take": "Brilliant. It shows GTA's cultural impact and the licensing opportunity around it. I'd love to see more IP crossovers in 2027, even local teams, to cross-pollinate fan bases."
-  },
-  {
-   "lane": "ENTERTAINMENT",
-   "headline": "One date stamp, and fans wrote the plot",
-   "aside": "Elder Scrolls 6",
-   "media": [
-    {
-     "path": "media/tes.png",
-     "label": "Skyrim art · Bethesda via Kotaku"
-    }
-   ],
-   "body": "Bethesda's first Elder Scrolls 6 teaser in eight years shows no gameplay. Just a buried scroll, runes and an in-world date five years after Skyrim. Fans already have time-travel theories.",
-   "take": "[YOUR TAKE]"
-  },
-  {
-   "lane": "ENTERTAINMENT",
-   "headline": "A band guarding its canon",
-   "aside": "Sleep Token",
-   "media": [
-    {
-     "path": "media/sleep.png",
-     "label": "Sleep Token · Louder · 19 Oct"
-    }
-   ],
-   "body": "The masked band broke their silence to disown a former associate's project: “What is ours is here, and here alone.” When the mystery is the product, who gets to add to the story?",
-   "take": "[YOUR TAKE]"
+   "take": "Brilliant, and a measure of GTA’s cultural weight: a fictional city now carries enough meaning to dress a real team. I’d like to see 2027 bring far more of this, with IP crossing into sport at every level, down to local and private teams, cross-pollinating fan bases that would never otherwise meet."
   },
   {
    "lane": "ENTERTAINMENT",
@@ -109,7 +89,7 @@
     }
    ],
    "body": "Closing 30 nights at Madison Square Garden, he dressed as his 2010 X Factor audition self, then as Pizza Rat on Halloween.",
-   "take": "People don't just love artists for their music. They love their stories, who they are, what they have to say. Once fans are devoted, they want to know everything."
+   "take": "Audiences don’t fall for music alone. They fall for the person: the story, the history, the point of view. Once fans are devoted, every detail becomes part of a world they’re invested in. The artists who understand that their own story is the deeper product will hold attention long after any single release."
   },
   {
    "lane": "EMERGING TECH",
@@ -117,13 +97,14 @@
    "aside": "from a sentence",
    "media": [
     {
+     "video": "media/clips/genie.mp4",
+     "start": 36,
      "path": "media/genie_c.png",
-     "label": "Google DeepMind · Genie 4 · 27 Oct",
-     "h": 300
+     "label": "Google DeepMind · Genie 4 · 27 Oct"
     }
    ],
    "body": "Genie 4 makes playable, real-time worlds you steer with text, with live sound and dialogue. Trusted testers only for now.",
-   "take": "Anybody can make anything doesn't mean great gaming survives. People play because the experience is rich. Outside of novelty, I don't think it lasts. For aspiring game makers, it makes a lot of sense."
+   "take": "The idea that great art and great games won’t survive now that anyone can make anything is a myth. People turn to entertainment to switch off, and to games because the experience is rich and authored. Beyond the novelty, I don’t think generated worlds will hold most people. For aspiring game makers, though, it collapses the distance between an idea and something playable."
   },
   {
    "lane": "EMERGING TECH",
@@ -131,44 +112,16 @@
    "aside": "Kling 4.0",
    "media": [
     {
-     "list": [
-      "30-second scenes in one go",
-      "Up to 15 references per character",
-      "Up to 10 keyframes",
-      "Launched 15 Oct (vendor's claims)"
-     ],
-     "label": "Kling 4.0 · Kuaishou via TechIntelPro"
+     "video": "media/clips/kling.mp4",
+     "start": 84,
+     "ypos": 0.0,
+     "h": 360,
+     "path": "media/kling2.png",
+     "label": "Kling 4.0 · campaign film by UNVEIL · 7 Nov"
     }
    ],
    "body": "Kling's new model holds a character steady across a 30-second scene, the hurdle that kept these tools from making recurring characters.",
-   "take": "Character consistency is the last hurdle. As Ed Catmull said, it's just another problem, and once it's solved, that's a good thing. Anyone who's used these tools knows the discipline it takes to make something that isn't slop."
-  },
-  {
-   "lane": "EMERGING TECH",
-   "headline": "A voice sold on its pauses",
-   "aside": "Block's Dessa",
-   "media": [
-    {
-     "path": "media/dessa.png",
-     "label": "Jack Dorsey · TechCrunch",
-     "pos": "center 30%"
-    }
-   ],
-   "body": "Block's Dessa talks and listens at the same time, laughs and pauses, and runs on a laptop. Jack Dorsey's pitch: “full of emotion, nuance, pauses.” Not public yet.",
-   "take": "[YOUR TAKE]"
-  },
-  {
-   "lane": "EMERGING TECH",
-   "headline": "Fanta built its own monsters",
-   "aside": "with an AI studio",
-   "media": [
-    {
-     "path": "media/fanta3.png",
-     "label": "Fanta Haunted Universe · Adweek"
-    }
-   ],
-   "body": "After years of licensing Chucky and Freddy Fazbear, Fanta made four original monsters with GRAiL, an AI studio, in what it calls a “human-led” process. Live in 50 markets.",
-   "take": "[YOUR TAKE]"
+   "take": "Character consistency is the last real hurdle. As Ed Catmull put it, it’s just another problem, and every solved problem widens what’s possible. But anyone who has used these tools knows the myth of endless prompted storytelling. Making something that isn’t slop still takes discipline, judgment and an editor’s eye."
   },
   {
    "lane": "WHAT I'D DO ON MONDAY",
@@ -176,18 +129,16 @@
    "aside": "no camera needed",
    "media": [
     {
-     "list": [
-      "A free skill: claude-animated-shorts",
-      "55 to 70 second vertical story shorts",
-      "2D characters in a painted 3D town",
-      "Script, voice, shots, stills, render",
-      "Made on your own computer"
-     ],
+     "video": "media/clips/shorts_repo.mp4",
+     "start": 11,
+     "ypos": 0.0,
+     "path": "media/shorts_page.png",
      "label": "GitHub · mromidev · MIT licence"
     }
    ],
    "body": "Its proof is a 67-second short about the 1831 Broughton bridge. Any history story, no filming, no archival footage.",
-   "take": "I don't buy “anyone can make anything.” Ruthless editing and the discipline to tell one idea coherently will become extremely valuable."
+   "take": "I don’t accept the premise that if anyone can make anything, nothing holds value. Access was never the scarce part. Ruthless editing and the discipline to tell one idea coherently are, and they’re about to become some of the most valuable skills in creative work."
   }
- ]
+ ],
+ "seconds": 9
 }
