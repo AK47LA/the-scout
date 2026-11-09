@@ -10,8 +10,8 @@
    "strategist."
   ],
   "stickers": {
-   "s1": "media/fanta3_stk.png",
-   "s2": "media/stranger_stk.png",
+   "s1": "media/meme_stk.png",
+   "s2": "media/heat_stk.png",
    "s3": "media/lore_stk.png"
   },
   "person": "media/me_cutout.png",
@@ -28,132 +28,88 @@
      "label": "Sprout Social · 14 Oct"
     }
    ],
-   "body": "Sprout Social named “lore” its 2026 social media word of the year, with over 10 million mentions. “Slop” had 8.8 million. 57% of social users say they want original, multi-part series from brands.",
-   "take": "[YOUR TAKE: one or two lines in your words]"
-  },
-  {
-   "lane": "ENTERTAINMENT",
-   "headline": "America's No. 1 film is a documentary",
-   "aside": "Nathan Fielder's",
-   "media": [
-    {
-     "path": "media/fielder_still.png",
-     "label": "You Can See Everything · A24 via AP"
-    }
-   ],
-   "body": "You Can See Everything, Fielder and Lance Oppenheim's film on Elizabeth Holmes, took $10.6M over Halloween weekend to top the box office. Rotten Tomatoes says no non-concert documentary has been No. 1 since Fahrenheit 9/11 in 2004.",
-   "take": "[YOUR TAKE]"
-  },
-  {
-   "lane": "EMERGING TECH",
-   "headline": "Your melody goes in first",
-   "aside": "Suno starts songs from MIDI",
-   "media": [
-    {
-     "path": "media/suno.png",
-     "label": "Suno · 4 Nov"
-    }
-   ],
-   "body": "Drop a MIDI sketch into Suno and it builds the full song around your notes. The prompt decides whether it follows them exactly, develops the motif or plays it on new instruments. Pro and Premier only for now.",
-   "take": "[YOUR TAKE]"
-  },
-  {
-   "lane": "ENTERTAINMENT",
-   "headline": "Stranger Things ended.",
-   "aside": "the world didn't",
-   "media": [
-    {
-     "path": "media/stranger.png",
-     "label": "Netflix · Stranger Things Day · 6 Nov",
-     "pos": "center 30%"
-    }
-   ],
-   "body": "On the night Will vanished in the show, Netflix announced Other Worlds, a live-action series set in the 1950s for 2028, plus a blooper reel and an Upside Down Tamagotchi.",
-   "take": "[YOUR TAKE]"
-  },
-  {
-   "lane": "EMERGING TECH",
-   "headline": "Stems on your own laptop",
-   "aside": "iZotope Photon",
-   "media": [
-    {
-     "path": "media/photon_c.png",
-     "label": "iZotope Photon · 3 Nov"
-    }
-   ],
-   "body": "Photon splits a mixed track into stems, separates up to six speakers from one file and cleans up noisy location audio. It runs on your own machine, nothing uploaded. $259 on launch sale.",
-   "take": "[YOUR TAKE]"
+   "body": "Sprout Social named “lore” its 2026 social media word of the year: over 10 million mentions, against 8.8 million for “slop”.",
+   "take": "As the cost of making anything goes to zero, what stands out is telling unique stories in ways that connect. It's not new. “Tell me a story” is the first thing kids ask for at bedtime. The winners will come from it."
   },
   {
    "lane": "CULTURE",
-   "headline": "Fanta stopped renting monsters",
-   "aside": "and built its own",
+   "headline": "A meme waited three years",
+   "aside": "for this month",
    "media": [
     {
-     "path": "media/fanta3.png",
-     "label": "Fanta Haunted Universe · Adweek"
+     "path": "media/meme_og.png",
+     "label": "Remember November 2026 · Know Your Meme"
     }
    ],
-   "body": "After years of licensing Chucky, Michael Myers and Freddy Fazbear, Fanta launched four original monsters in 50 markets. Its global VP of marketing: “Halloween should be to Fanta what Christmas is to Coke.”",
-   "take": "[YOUR TAKE]"
-  },
-  {
-   "lane": "EMERGING TECH",
-   "headline": "Clips that come with their own stems",
-   "aside": "Pika H3 Flex",
-   "media": [
-    {
-     "path": "media/pika_c.png",
-     "label": "Pika H3 Flex · 29 Oct"
-    }
-   ],
-   "body": "Up to 15-second clips with synced stereo sound, finished up to 4K. The soundtrack can be split into dialogue, music and effects, so you can drop in your own track. Creator subscribers get 15 free a day until 15 Nov.",
-   "take": "[YOUR TAKE]"
+   "body": "Since 2023, a singing polar bear has been reminding people that November 2026 is coming. A version from late August passed 980,000 views in two weeks. Now it's here.",
+   "take": "Everything is instant and disposable. Making something to be experienced at a later date takes discipline and foresight. That's how you cut through the noise."
   },
   {
    "lane": "CULTURE",
-   "headline": "The No. 1 costume was a horror mascot",
-   "aside": "Buddy beat the unicorn",
+   "headline": "Fans paying to watch fans",
+   "aside": "BTS in São Paulo",
    "media": [
     {
-     "list": [
-      "1. Buddy the Unicorn (Buddy)",
-      "2. NeeDoh",
-      "3. Nikki (Obsession)",
-      "4. Agamemnon (The Odyssey)",
-      "5. Lily Love Braids (Poppy Playtime)"
-     ],
-     "label": "Google Frightgeist · 14 Oct"
+     "path": "media/bts.png",
+     "label": "BTS · Star News Korea · 30 Oct"
     }
    ],
-   "body": "Google's top trending Halloween costume came from Casper Kelly's horror film Buddy, and searches for it passed “kids unicorn costume” for the first time. Four of the top five are characters.",
+   "body": "BTS sold 252,000 tickets across three nights in São Paulo, and the cinema livestream made $3M in the US. Their first Brazil fan meeting, in 2014, held 1,500.",
+   "take": "Fans want to be connected to other fans. An event about the event. Artists who can build these moments, for films or concerts, will stand out. I'd love to see it at industry conferences too."
+  },
+  {
+   "lane": "ENTERTAINMENT",
+   "headline": "An NBA team will dress as a fake city",
+   "aside": "Vice City night",
+   "media": [
+    {
+     "path": "media/heat.png",
+     "label": "Miami Heat x Cactus Jack x Nike · SI",
+     "pos": "center 40%"
+    }
+   ],
+   "body": "On 18 Nov, the night before GTA VI launches, the Miami Heat wear “Vice City” jerseys with the GTA VI logo, sold at the arena that day.",
+   "take": "Brilliant. It shows GTA's cultural impact and the licensing opportunity around it. I'd love to see more IP crossovers in 2027, even local teams, to cross-pollinate fan bases."
+  },
+  {
+   "lane": "ENTERTAINMENT",
+   "headline": "One date stamp, and fans wrote the plot",
+   "aside": "Elder Scrolls 6",
+   "media": [
+    {
+     "path": "media/tes.png",
+     "label": "Skyrim art · Bethesda via Kotaku"
+    }
+   ],
+   "body": "Bethesda's first Elder Scrolls 6 teaser in eight years shows no gameplay. Just a buried scroll, runes and an in-world date five years after Skyrim. Fans already have time-travel theories.",
    "take": "[YOUR TAKE]"
   },
   {
    "lane": "ENTERTAINMENT",
-   "headline": "A YouTuber made a $371M hit",
-   "aside": "then gave his next film away",
+   "headline": "A band guarding its canon",
+   "aside": "Sleep Token",
    "media": [
     {
-     "path": "media/barker.png",
-     "label": "Mama Bear · Tubefilter · 28 Oct"
+     "path": "media/sleep.png",
+     "label": "Sleep Token · Louder · 19 Oct"
     }
    ],
-   "body": "Curry Barker's Obsession made $371M worldwide on a budget of about $750K, per GamesRadar. On 29 Oct he premiered his next horror short, Mama Bear, free on his YouTube channel.",
+   "body": "The masked band broke their silence to disown a former associate's project: “What is ours is here, and here alone.” When the mystery is the product, who gets to add to the story?",
    "take": "[YOUR TAKE]"
   },
   {
-   "lane": "EMERGING TECH",
-   "headline": "Build your own creative app",
-   "aside": "by describing it",
+   "lane": "ENTERTAINMENT",
+   "headline": "Harry Styles played his own origin story",
+   "aside": "and Pizza Rat",
    "media": [
     {
-     "path": "media/runway.png",
-     "label": "Runway App Studio · 26 Oct"
+     "path": "media/harry_c.png",
+     "label": "Madison Square Garden · Stereogum · 1 Nov",
+     "pos": "center 25%"
     }
    ],
-   "body": "Runway App Studio turns a plain description into a working app you can share with your team or a public link. Runway's own examples: a character swap app and an app that makes instrumental albums with cover art.",
-   "take": "[YOUR TAKE]"
+   "body": "Closing 30 nights at Madison Square Garden, he dressed as his 2010 X Factor audition self, then as Pizza Rat on Halloween.",
+   "take": "People don't just love artists for their music. They love their stories, who they are, what they have to say. Once fans are devoted, they want to know everything."
   },
   {
    "lane": "EMERGING TECH",
@@ -166,7 +122,52 @@
      "h": 300
     }
    ],
-   "body": "Google DeepMind's Genie 4 makes playable, real-time worlds you steer with text, with live sound, music and dialogue. It's with trusted testers for now.",
+   "body": "Genie 4 makes playable, real-time worlds you steer with text, with live sound and dialogue. Trusted testers only for now.",
+   "take": "Anybody can make anything doesn't mean great gaming survives. People play because the experience is rich. Outside of novelty, I don't think it lasts. For aspiring game makers, it makes a lot of sense."
+  },
+  {
+   "lane": "EMERGING TECH",
+   "headline": "Characters that stay the same",
+   "aside": "Kling 4.0",
+   "media": [
+    {
+     "list": [
+      "30-second scenes in one go",
+      "Up to 15 references per character",
+      "Up to 10 keyframes",
+      "Launched 15 Oct (vendor's claims)"
+     ],
+     "label": "Kling 4.0 · Kuaishou via TechIntelPro"
+    }
+   ],
+   "body": "Kling's new model holds a character steady across a 30-second scene, the hurdle that kept these tools from making recurring characters.",
+   "take": "Character consistency is the last hurdle. As Ed Catmull said, it's just another problem, and once it's solved, that's a good thing. Anyone who's used these tools knows the discipline it takes to make something that isn't slop."
+  },
+  {
+   "lane": "EMERGING TECH",
+   "headline": "A voice sold on its pauses",
+   "aside": "Block's Dessa",
+   "media": [
+    {
+     "path": "media/dessa.png",
+     "label": "Jack Dorsey · TechCrunch",
+     "pos": "center 30%"
+    }
+   ],
+   "body": "Block's Dessa talks and listens at the same time, laughs and pauses, and runs on a laptop. Jack Dorsey's pitch: “full of emotion, nuance, pauses.” Not public yet.",
+   "take": "[YOUR TAKE]"
+  },
+  {
+   "lane": "EMERGING TECH",
+   "headline": "Fanta built its own monsters",
+   "aside": "with an AI studio",
+   "media": [
+    {
+     "path": "media/fanta3.png",
+     "label": "Fanta Haunted Universe · Adweek"
+    }
+   ],
+   "body": "After years of licensing Chucky and Freddy Fazbear, Fanta made four original monsters with GRAiL, an AI studio, in what it calls a “human-led” process. Live in 50 markets.",
    "take": "[YOUR TAKE]"
   },
   {
@@ -185,8 +186,8 @@
      "label": "GitHub · mromidev · MIT licence"
     }
    ],
-   "body": "Its proof is a 67-second short about the 1831 Broughton bridge. The same move works for any history story people love, without filming or archival footage.",
-   "take": "[YOUR TAKE: the story you'd make first]"
+   "body": "Its proof is a 67-second short about the 1831 Broughton bridge. Any history story, no filming, no archival footage.",
+   "take": "I don't buy “anyone can make anything.” Ruthless editing and the discipline to tell one idea coherently will become extremely valuable."
   }
  ]
 }

@@ -41,6 +41,8 @@ font-family:'Geist','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialias
 font-size:31px;line-height:1.55;font-weight:500}}
 .body{{margin-top:auto;padding-top:34px;font-size:33px;line-height:1.45;color:#E6EAF1}}
 .take{{margin-top:16px;font-size:30px;line-height:1.4;color:#E2BE72}}
+.take.own{{font-size:32px;line-height:1.42;color:#EEF1F5}}
+.body.small{{font-size:28px;color:#B8C1D1}}
 .foot{{margin-top:34px;padding-top:18px;border-top:1px solid rgba(238,241,245,.12);font-family:'Geist Mono',monospace;font-size:15px;letter-spacing:.14em;color:#8A94A8}}
 .cover .hl{{font-size:118px;line-height:1.08;margin-top:40px}}
 .stk{{display:inline-block;vertical-align:middle;height:112px;margin:0 12px;border-radius:14px;transform:rotate(-3deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}}
@@ -75,9 +77,10 @@ def media_html(media):
 
 def slide_html(s, handle):
     hl = lit(s["headline"]) + (f' <span class="lit">({html.escape(s["aside"])})</span>' if s.get("aside") else "")
-    take = f'<div class="take">{html.escape(s["take"])}</div>' if s.get("take") else ""
+    slot = s.get("take", "").startswith("[")  # an empty slot is marked in brass; the owner's own words read as body text
+    take = (f'<div class="take{"" if slot else " own"}">{html.escape(s["take"])}</div>') if s.get("take") else ""
     return (f'<div class="f"><span class="lane">{html.escape(s["lane"])}</span><h1 class="hl">{hl}</h1>'
-            f'{media_html(s.get("media"))}<div class="body">{html.escape(s["body"])}</div>{take}'
+            f'{media_html(s.get("media"))}<div class="body{" small" if s.get("take") and not slot else ""}">{html.escape(s["body"])}</div>{take}'
             f'<div class="foot">{html.escape(handle)}</div></div>')
 
 
