@@ -44,8 +44,10 @@ font-size:31px;line-height:1.55;font-weight:500}}
 .take.own{{font-size:30px;line-height:1.42;color:#EEF1F5}}
 .body.small{{font-size:26px;color:#B8C1D1}}
 .foot{{margin-top:34px;padding-top:18px;border-top:1px solid rgba(238,241,245,.12);font-family:'Geist Mono',monospace;font-size:15px;letter-spacing:.14em;color:#8A94A8}}
-.cover .hl{{font-size:118px;line-height:1.08;margin-top:40px}}
-.stk{{display:inline-block;vertical-align:middle;height:112px;margin:0 12px;border-radius:14px;transform:rotate(-3deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}}
+.cover{{padding-top:150px}}
+.cover .lane{{font-weight:600}}
+.cover .hl{{font-size:118px;line-height:1.08;margin-top:52px}}
+.stk{{display:inline-block;vertical-align:middle;height:140px;max-width:240px;object-fit:contain;margin:0 14px;border-radius:6px;filter:drop-shadow(0 0 16px rgba(238,241,245,.16)) drop-shadow(0 12px 20px rgba(0,0,0,.6))}}
 """
 
 
@@ -93,7 +95,7 @@ def cover_html(c, lanes):
     lines = "<br>".join(line(l) for l in c["lines"])
     person = (f'<img src="{uri(c["person"])}" style="position:absolute;right:0;bottom:0;height:{c.get("person_h", 660)}px">'
               if c.get("person") else "")
-    corner = (f'<img src="{uri(c["corner"])}" style="position:absolute;left:92px;bottom:96px;height:{c.get("corner_h", 260)}px;'
+    corner = (f'<img src="{uri(c["corner"])}" style="position:absolute;left:{c.get("corner_left", 92)}px;bottom:{c.get("corner_bottom", 96)}px;height:{c.get("corner_h", 260)}px;'
               f'filter:drop-shadow(0 14px 24px rgba(0,0,0,.55))">' if c.get("corner") else "")
     return f'<div class="f cover"><span class="lane">{html.escape(lanes)}</span><h1 class="hl">{lines}</h1></div>{corner}{person}'
 
