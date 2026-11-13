@@ -133,8 +133,12 @@ def motion_clip(m, w, h, dur, out):
     w2, h2 = w - w % 2, h - h % 2
     cover = f"scale={w2}:{h2}:force_original_aspect_ratio=increase,crop={w2}:{h2}:(in_w-{w2})/2:(in_h-{h2})*{m.get('ypos', 0.5)}"
     if m.get("video"):
+        vf = f"{cover},fps={fps},setsar=1"
+        if m.get("fit") == "contain":  # the whole frame, on a soft blur of itself
+            vf = (f"split[a][b];[a]{cover},boxblur=24:2,eq=brightness=-0.18[bg];"
+                  f"[b]scale={w2}:{h2}:force_original_aspect_ratio=decrease[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,fps={fps},setsar=1")
         ff(["-ss", str(m.get("start", 0)), "-t", str(dur), "-stream_loop", "-1", "-i", m["video"], "-an",
-            "-vf", f"{cover},fps={fps},setsar=1", "-t", str(dur), "-pix_fmt", "yuv420p", out])
+            "-vf", vf, "-t", str(dur), "-pix_fmt", "yuv420p", out])
         return
     frames = m.get("frames") or [m["path"]]
     n = len(frames)
